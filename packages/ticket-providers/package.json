@@ -11,6 +11,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@claudeswarm/shared": "workspace:*"
+    "@claudeswarm/shared": "workspace:*",
+    "@linear/sdk": "^69.0.0"
   }
 }

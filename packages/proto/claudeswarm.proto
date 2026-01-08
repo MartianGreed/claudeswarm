@@ -286,6 +286,7 @@ message Project {
   bool is_active = 10;
   google.protobuf.Timestamp created_at = 11;
   google.protobuf.Timestamp updated_at = 12;
+  optional string claude_md_template = 13;
 }
 
 message ProjectStats {

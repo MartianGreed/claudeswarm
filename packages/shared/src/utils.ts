@@ -20,7 +20,7 @@ export function generateId(length = 21): string {
 
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
-  return text.slice(0, maxLength - 3) + '...'
+  return `${text.slice(0, maxLength - 3)}...`
 }
 
 export function parsePromiseTags(output: string): string | null {
@@ -66,7 +66,7 @@ export function retry<T>(
       } catch (error) {
         lastError = error as Error
         if (attempt < maxAttempts) {
-          const delay = backoff ? delayMs * Math.pow(2, attempt - 1) : delayMs
+          const delay = backoff ? delayMs * 2 ** (attempt - 1) : delayMs
           await wait(delay)
         }
       }

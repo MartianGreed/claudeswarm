@@ -248,6 +248,15 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
   }),
 }))
 
+export const magicLinkTokens = pgTable('magic_link_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull(),
+  token: text('token').notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Organization = typeof organizations.$inferSelect
@@ -262,6 +271,8 @@ export type JobLog = typeof jobLogs.$inferSelect
 export type NewJobLog = typeof jobLogs.$inferInsert
 export type Session = typeof sessions.$inferSelect
 export type NewSession = typeof sessions.$inferInsert
+export type MagicLinkToken = typeof magicLinkTokens.$inferSelect
+export type NewMagicLinkToken = typeof magicLinkTokens.$inferInsert
 export type JobStatus = (typeof jobStatusEnum.enumValues)[number]
 export type TicketProvider = (typeof ticketProviderEnum.enumValues)[number]
 export type VcsProvider = (typeof vcsProviderEnum.enumValues)[number]

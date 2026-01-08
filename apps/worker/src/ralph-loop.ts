@@ -86,7 +86,7 @@ export class RalphLoop {
         sandboxPath: this.sandboxPath!,
         prompt: this.state.prompt,
         timeout: 10 * 60 * 1000, // 10 minutes per iteration
-        onOutput: (chunk) => {
+        onOutput: (_chunk) => {
           // Could stream to real-time updates here
         },
       })
