@@ -32,12 +32,15 @@ export class Queue {
     name: T,
     handler: (job: PgBoss.Job<QueuePayloadMap[T]>) => Promise<void>,
   ): Promise<string> {
-    return this.boss.work(name, async (jobs) => {
-      const jobArray = Array.isArray(jobs) ? jobs : [jobs]
-      for (const job of jobArray) {
-        await handler(job as PgBoss.Job<QueuePayloadMap[T]>)
-      }
-    })
+    return this.boss.work(
+      name,
+      async (jobs: PgBoss.Job<QueuePayloadMap[T]> | PgBoss.Job<QueuePayloadMap[T]>[]) => {
+        const jobArray = Array.isArray(jobs) ? jobs : [jobs]
+        for (const job of jobArray) {
+          await handler(job)
+        }
+      },
+    )
   }
 
   async cancel<T extends QueueName>(name: T, jobId: string): Promise<void> {

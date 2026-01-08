@@ -16,6 +16,7 @@
     "@claudeswarm/shared": "workspace:*",
     "@claudeswarm/ticket-providers": "workspace:*",
     "@claudeswarm/vcs": "workspace:*",
+    "drizzle-orm": "^0.38.2",
     "simple-git": "^3.27.0"
   }
 }

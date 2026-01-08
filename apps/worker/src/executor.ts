@@ -56,7 +56,12 @@ export class ClaudeExecutor {
     let output = ''
 
     try {
-      const reader = this.proc.stdout.getReader()
+      const stdout = this.proc.stdout
+      if (!stdout || typeof stdout === 'number') {
+        throw new ClaudeExecutorError('stdout is not a readable stream')
+      }
+
+      const reader = stdout.getReader()
 
       while (true) {
         const { done, value } = await reader.read()

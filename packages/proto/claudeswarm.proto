@@ -121,7 +121,7 @@ service JobService {
   rpc RetryJob(RetryJobRequest) returns (RetryJobResponse);
   rpc AnswerClarification(AnswerClarificationRequest) returns (AnswerClarificationResponse);
   rpc GetJobLogs(GetJobLogsRequest) returns (GetJobLogsResponse);
-  rpc StreamJobUpdates(StreamJobUpdatesRequest) returns (stream JobUpdate);
+  rpc StreamJobUpdates(StreamJobUpdatesRequest) returns (stream StreamJobUpdatesResponse);
 }
 
 message ListJobsRequest {
@@ -185,7 +185,7 @@ message StreamJobUpdatesRequest {
   string job_id = 1;
 }
 
-message JobUpdate {
+message StreamJobUpdatesResponse {
   string job_id = 1;
   JobStatus status = 2;
   int32 iteration = 3;

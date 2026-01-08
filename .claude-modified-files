@@ -82,3 +82,11 @@
 /Users/valentindosimont/www/claudeswarm/tsconfig.json
 /Users/valentindosimont/www/claudeswarm/packages/db/src/schema.ts
 /Users/valentindosimont/www/claudeswarm/packages/queue/src/queue.ts
+/Users/valentindosimont/www/claudeswarm/apps/api/package.json
+/Users/valentindosimont/www/claudeswarm/apps/worker/package.json
+/Users/valentindosimont/www/claudeswarm/packages/queue/src/queue.ts
+/Users/valentindosimont/www/claudeswarm/apps/worker/src/executor.ts
+/Users/valentindosimont/www/claudeswarm/apps/worker/src/executor.ts
+/Users/valentindosimont/www/claudeswarm/packages/proto/claudeswarm/v1/claudeswarm.proto
+/Users/valentindosimont/www/claudeswarm/packages/proto/claudeswarm/v1/claudeswarm.proto
+/Users/valentindosimont/www/claudeswarm/packages/proto/buf.yaml
