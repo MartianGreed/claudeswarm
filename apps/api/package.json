@@ -11,6 +11,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.2.3",
     "@claudeswarm/db": "workspace:*",
     "@claudeswarm/proto": "workspace:*",
     "@claudeswarm/queue": "workspace:*",
@@ -18,8 +19,9 @@
     "@claudeswarm/ticket-providers": "workspace:*",
     "@connectrpc/connect": "^2.0.0",
     "@connectrpc/connect-node": "^2.0.0",
+    "@hono/node-server": "^1.13.7",
     "drizzle-orm": "^0.38.2",
     "hono": "^4.6.14",
-    "@hono/node-server": "^1.13.7"
+    "resend": "^6.7.0"
   }
 }
