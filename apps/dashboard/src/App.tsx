@@ -8,7 +8,14 @@ import { ProjectDetailPage } from './pages/ProjectDetail'
 import { ProjectsPage } from './pages/Projects'
 import { VerifyPage } from './pages/Verify'
 
-type Route = 'login' | 'verify' | 'projects' | 'new-project' | 'project-detail' | 'jobs' | 'job-detail'
+type Route =
+  | 'login'
+  | 'verify'
+  | 'projects'
+  | 'new-project'
+  | 'project-detail'
+  | 'jobs'
+  | 'job-detail'
 
 function getInitialRoute(): Route {
   const path = window.location.pathname

@@ -1,6 +1,6 @@
 import type { ProviderConfig, TicketData, TicketPriority } from '@claudeswarm/shared'
 import { TicketProviderError } from '@claudeswarm/shared'
-import { LinearClient, type Issue } from '@linear/sdk'
+import { type Issue, LinearClient } from '@linear/sdk'
 import type { TicketProvider } from './interface'
 
 function mapPriority(linearPriority: number): TicketPriority | null {

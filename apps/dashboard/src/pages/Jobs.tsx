@@ -80,7 +80,9 @@ export function JobsPage({ projectId, projectName, onBack, onSelectJob }: JobsPa
 
           {data && data.jobs.length === 0 && (
             <div className="border-4 border-dashed border-gray-200 rounded-lg p-8 text-center">
-              <p className="text-gray-500">No jobs yet. Jobs are created when tickets are synced.</p>
+              <p className="text-gray-500">
+                No jobs yet. Jobs are created when tickets are synced.
+              </p>
             </div>
           )}
 

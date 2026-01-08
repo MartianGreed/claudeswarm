@@ -1,6 +1,6 @@
 import { create } from '@bufbuild/protobuf'
 import { timestampFromDate } from '@bufbuild/protobuf/wkt'
-import { createDbClient, jobLogs, jobs, tickets } from '@claudeswarm/db'
+import { createDbClient, jobLogs, jobs } from '@claudeswarm/db'
 import {
   AnswerClarificationResponseSchema,
   CancelJobResponseSchema,
@@ -14,7 +14,7 @@ import {
   RetryJobResponseSchema,
   TicketSchema,
 } from '@claudeswarm/proto'
-import { createQueue, QUEUE_NAMES } from '@claudeswarm/queue'
+import { QUEUE_NAMES, createQueue } from '@claudeswarm/queue'
 import type { ConnectRouter } from '@connectrpc/connect'
 import { and, count, desc, eq } from 'drizzle-orm'
 import { env } from '../env'
@@ -92,7 +92,9 @@ export default (router: ConnectRouter) =>
       if (req.status !== undefined && req.status !== JobStatus.UNSPECIFIED) {
         const statusStr = mapStatusFromProto(req.status)
         if (statusStr) {
-          whereConditions.push(eq(jobs.status, statusStr as typeof jobs.status.enumValues[number]))
+          whereConditions.push(
+            eq(jobs.status, statusStr as (typeof jobs.status.enumValues)[number]),
+          )
         }
       }
 

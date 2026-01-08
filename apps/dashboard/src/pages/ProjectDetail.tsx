@@ -9,7 +9,12 @@ interface ProjectDetailPageProps {
   onViewJobs: (projectName: string) => void
 }
 
-export function ProjectDetailPage({ projectId, onBack, onDeleted, onViewJobs }: ProjectDetailPageProps) {
+export function ProjectDetailPage({
+  projectId,
+  onBack,
+  onDeleted,
+  onViewJobs,
+}: ProjectDetailPageProps) {
   const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
