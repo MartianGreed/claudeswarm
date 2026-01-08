@@ -14,14 +14,14 @@ import {
   RetryJobResponseSchema,
   TicketSchema,
 } from '@claudeswarm/proto'
-import { QUEUE_NAMES, createQueue } from '@claudeswarm/queue'
+import { QUEUE_NAMES } from '@claudeswarm/queue'
 import type { ConnectRouter } from '@connectrpc/connect'
 import { and, count, desc, eq } from 'drizzle-orm'
 import { env } from '../env'
 import type { AuthUser } from '../middleware/auth'
+import { queue } from '../queue'
 
 const db = createDbClient(env.DATABASE_URL)
-const queue = createQueue(env.DATABASE_URL)
 
 function getUser(ctx: { requestHeader: Headers }): AuthUser {
   const userHeader = ctx.requestHeader.get('x-user-json')
@@ -225,9 +225,7 @@ export default (router: ConnectRouter) =>
         throw new Error('Job cannot be cancelled')
       }
 
-      await queue.start()
       await queue.send(QUEUE_NAMES.JOB_CANCEL, { jobId: req.jobId })
-      await queue.stop()
 
       await db
         .update(jobs)
@@ -245,6 +243,7 @@ export default (router: ConnectRouter) =>
 
       const job = await db.query.jobs.findFirst({
         where: eq(jobs.id, req.jobId),
+        with: { ticket: true, project: true },
       })
 
       if (!job) {
@@ -268,6 +267,23 @@ export default (router: ConnectRouter) =>
           updatedAt: new Date(),
         })
         .where(eq(jobs.id, req.jobId))
+
+      await queue.send(QUEUE_NAMES.JOB_PROCESS, {
+        jobId: job.id,
+        projectId: job.projectId,
+        ticketId: job.ticketId,
+        externalTicketId: job.ticket.externalId,
+        repoUrl: job.project.repoUrl,
+        defaultBranch: job.project.defaultBranch,
+        vcsProvider: job.project.vcsProvider,
+        vcsToken: job.project.vcsToken,
+        title: job.ticket.title,
+        description: job.ticket.description || '',
+        maxIterations: 100,
+        completionPromise: 'TASK COMPLETE',
+        sandboxBasePath: job.project.sandboxBasePath,
+        claudeMdTemplate: job.project.claudeMdTemplate,
+      })
 
       return create(RetryJobResponseSchema, { success: true })
     },
@@ -299,9 +315,7 @@ export default (router: ConnectRouter) =>
         })
         .where(eq(jobs.id, req.jobId))
 
-      await queue.start()
       await queue.send(QUEUE_NAMES.JOB_RESUME, { jobId: req.jobId, answer: req.answer })
-      await queue.stop()
 
       return create(AnswerClarificationResponseSchema, { success: true })
     },

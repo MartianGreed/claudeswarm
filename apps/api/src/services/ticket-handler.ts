@@ -8,15 +8,15 @@ import {
   TicketSchema,
   TicketService,
 } from '@claudeswarm/proto'
-import { QUEUE_NAMES, createQueue } from '@claudeswarm/queue'
+import { QUEUE_NAMES } from '@claudeswarm/queue'
 import { createTicketProvider } from '@claudeswarm/ticket-providers'
 import type { ConnectRouter } from '@connectrpc/connect'
 import { and, count, desc, eq } from 'drizzle-orm'
 import { env } from '../env'
 import type { AuthUser } from '../middleware/auth'
+import { queue } from '../queue'
 
 const db = createDbClient(env.DATABASE_URL)
-const queue = createQueue(env.DATABASE_URL)
 
 function getUser(ctx: { requestHeader: Headers }): AuthUser {
   const userHeader = ctx.requestHeader.get('x-user-json')
@@ -114,7 +114,6 @@ export default (router: ConnectRouter) =>
             })
             .returning()
 
-          await queue.start()
           await queue.send(QUEUE_NAMES.JOB_PROCESS, {
             jobId: newJob.id,
             projectId: project.id,
@@ -131,7 +130,6 @@ export default (router: ConnectRouter) =>
             sandboxBasePath: project.sandboxBasePath,
             claudeMdTemplate: project.claudeMdTemplate,
           })
-          await queue.stop()
 
           createdJobsCount++
         }

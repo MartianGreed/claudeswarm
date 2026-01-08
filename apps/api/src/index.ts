@@ -7,6 +7,7 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { env } from './env'
 import { type AuthUser, authMiddleware } from './middleware/auth'
+import { startQueue, stopQueue } from './queue'
 import { healthRoutes } from './routes/health'
 import routes from './services'
 
@@ -160,8 +161,26 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   }
 })
 
-console.log(`Starting API server on ${env.HOST}:${env.PORT}`)
+async function main() {
+  console.log(`Starting API server on ${env.HOST}:${env.PORT}`)
 
-server.listen(env.PORT, env.HOST, () => {
-  console.log(`Server listening on http://${env.HOST}:${env.PORT}`)
-})
+  await startQueue()
+
+  server.listen(env.PORT, env.HOST, () => {
+    console.log(`Server listening on http://${env.HOST}:${env.PORT}`)
+  })
+
+  process.on('SIGTERM', async () => {
+    console.log('Shutting down API server...')
+    await stopQueue()
+    process.exit(0)
+  })
+
+  process.on('SIGINT', async () => {
+    console.log('Shutting down API server...')
+    await stopQueue()
+    process.exit(0)
+  })
+}
+
+main().catch(console.error)
