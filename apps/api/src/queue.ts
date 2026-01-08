@@ -1,4 +1,6 @@
-import { createQueue } from '@claudeswarm/queue'
+import { type createDbClient, jobs } from '@claudeswarm/db'
+import { QUEUE_NAMES, createQueue } from '@claudeswarm/queue'
+import { eq } from 'drizzle-orm'
 import { env } from './env'
 
 export const queue = createQueue(env.DATABASE_URL)
@@ -18,5 +20,39 @@ export async function stopQueue(): Promise<void> {
     await queue.stop()
     started = false
     console.log('Queue stopped')
+  }
+}
+
+export async function recoverOrphanedJobs(db: ReturnType<typeof createDbClient>): Promise<void> {
+  const pendingJobs = await db.query.jobs.findMany({
+    where: eq(jobs.status, 'pending'),
+    with: { ticket: true, project: true },
+  })
+
+  if (pendingJobs.length === 0) {
+    console.log('No orphaned jobs to recover')
+    return
+  }
+
+  console.log(`Recovering ${pendingJobs.length} orphaned job(s)...`)
+
+  for (const job of pendingJobs) {
+    await queue.send(QUEUE_NAMES.JOB_PROCESS, {
+      jobId: job.id,
+      projectId: job.projectId,
+      ticketId: job.ticketId,
+      externalTicketId: job.ticket.externalId,
+      repoUrl: job.project.repoUrl,
+      defaultBranch: job.project.defaultBranch,
+      vcsProvider: job.project.vcsProvider,
+      vcsToken: job.project.vcsToken,
+      title: job.ticket.title,
+      description: job.ticket.description || '',
+      maxIterations: 100,
+      completionPromise: 'TASK COMPLETE',
+      sandboxBasePath: job.project.sandboxBasePath,
+      claudeMdTemplate: job.project.claudeMdTemplate,
+    })
+    console.log(`  Re-queued job ${job.id}`)
   }
 }

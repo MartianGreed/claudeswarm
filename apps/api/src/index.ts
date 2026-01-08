@@ -7,7 +7,7 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { env } from './env'
 import { type AuthUser, authMiddleware } from './middleware/auth'
-import { startQueue, stopQueue } from './queue'
+import { recoverOrphanedJobs, startQueue, stopQueue } from './queue'
 import { healthRoutes } from './routes/health'
 import routes from './services'
 
@@ -165,6 +165,7 @@ async function main() {
   console.log(`Starting API server on ${env.HOST}:${env.PORT}`)
 
   await startQueue()
+  await recoverOrphanedJobs(db)
 
   server.listen(env.PORT, env.HOST, () => {
     console.log(`Server listening on http://${env.HOST}:${env.PORT}`)
