@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { getProjectClient } from '../lib/api'
+import { getProjectClient, getTicketClient } from '../lib/api'
 
 interface ProjectDetailPageProps {
   projectId: string
@@ -71,6 +71,16 @@ export function ProjectDetailPage({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       onDeleted()
+    },
+  })
+
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const client = getTicketClient()
+      return client.syncTickets({ projectId })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs', projectId] })
     },
   })
 
@@ -285,6 +295,25 @@ export function ProjectDetailPage({
             </div>
           )}
 
+          {syncMutation.error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-red-600 text-sm">
+                {syncMutation.error instanceof Error
+                  ? syncMutation.error.message
+                  : 'Failed to sync tickets'}
+              </p>
+            </div>
+          )}
+
+          {syncMutation.isSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-4">
+              <p className="text-green-600 text-sm">
+                Synced {syncMutation.data?.syncedCount || 0} tickets, created{' '}
+                {syncMutation.data?.createdJobsCount || 0} new jobs
+              </p>
+            </div>
+          )}
+
           <div className="flex justify-between">
             <div className="flex gap-3">
               <button
@@ -301,6 +330,14 @@ export function ProjectDetailPage({
                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 View Jobs
+              </button>
+              <button
+                type="button"
+                onClick={() => syncMutation.mutate()}
+                disabled={syncMutation.isPending}
+                className="px-4 py-2 text-indigo-600 border border-indigo-300 rounded-md hover:bg-indigo-50 disabled:opacity-50"
+              >
+                {syncMutation.isPending ? 'Syncing...' : 'Sync Tickets'}
               </button>
             </div>
             <button

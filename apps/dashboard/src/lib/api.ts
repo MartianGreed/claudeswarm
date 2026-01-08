@@ -1,4 +1,4 @@
-import { AuthService, JobService, ProjectService } from '@claudeswarm/proto'
+import { AuthService, JobService, ProjectService, TicketService } from '@claudeswarm/proto'
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { getSessionCookie } from './cookies'
@@ -31,4 +31,8 @@ export function getProjectClient() {
 
 export function getJobClient() {
   return createClient(JobService, getTransport())
+}
+
+export function getTicketClient() {
+  return createClient(TicketService, getTransport())
 }
