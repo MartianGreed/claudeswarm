@@ -30,6 +30,7 @@ export function ProjectDetailPage({
     maxConcurrentJobs: 3,
     isActive: true,
     claudeMdTemplate: '',
+    ticketProviderConfig: '',
   })
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export function ProjectDetailPage({
         maxConcurrentJobs: data.project.maxConcurrentJobs,
         isActive: data.project.isActive,
         claudeMdTemplate: data.project.claudeMdTemplate || '',
+        ticketProviderConfig: data.project.ticketProviderConfigJson || '',
       })
     }
   }, [data])
@@ -52,6 +54,7 @@ export function ProjectDetailPage({
         maxConcurrentJobs: formData.maxConcurrentJobs,
         isActive: formData.isActive,
         claudeMdTemplate: formData.claudeMdTemplate || undefined,
+        ticketProviderConfigJson: formData.ticketProviderConfig || undefined,
       })
     },
     onSuccess: () => {
@@ -170,6 +173,31 @@ export function ProjectDetailPage({
                 : project.ticketProvider === 2
                   ? 'Notion'
                   : 'Jira'}
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="ticketProviderConfig"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Ticket Provider Config (JSON)
+            </label>
+            <textarea
+              id="ticketProviderConfig"
+              name="ticketProviderConfig"
+              value={formData.ticketProviderConfig}
+              onChange={handleChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              placeholder='{"teamId": "TEAM-123"}'
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {project.ticketProvider === 1
+                ? 'For Linear: {"teamId": "your-team-id"}'
+                : project.ticketProvider === 2
+                  ? 'For Notion: {"databaseId": "your-database-id"}'
+                  : 'For Jira: {"projectKey": "PROJECT", "baseUrl": "https://company.atlassian.net"}'}
             </p>
           </div>
 

@@ -91,6 +91,7 @@ message UpdateProjectRequest {
   optional int32 max_concurrent_jobs = 3;
   optional bool is_active = 4;
   optional string claude_md_template = 5;
+  optional string ticket_provider_config_json = 6;
 }
 
 message UpdateProjectResponse {
@@ -287,6 +288,7 @@ message Project {
   google.protobuf.Timestamp created_at = 11;
   google.protobuf.Timestamp updated_at = 12;
   optional string claude_md_template = 13;
+  optional string ticket_provider_config_json = 14;
 }
 
 message ProjectStats {

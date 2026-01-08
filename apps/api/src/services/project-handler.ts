@@ -150,6 +150,9 @@ export default (router: ConnectRouter) =>
           maxConcurrentJobs: project.maxConcurrentJobs,
           isActive: project.isActive,
           claudeMdTemplate: project.claudeMdTemplate || undefined,
+          ticketProviderConfigJson: project.ticketProviderConfig
+            ? JSON.stringify(project.ticketProviderConfig)
+            : undefined,
         }),
       })
     },
@@ -212,6 +215,11 @@ export default (router: ConnectRouter) =>
       if (req.maxConcurrentJobs !== undefined) updates.maxConcurrentJobs = req.maxConcurrentJobs
       if (req.isActive !== undefined) updates.isActive = req.isActive
       if (req.claudeMdTemplate !== undefined) updates.claudeMdTemplate = req.claudeMdTemplate
+      if (req.ticketProviderConfigJson !== undefined) {
+        updates.ticketProviderConfig = req.ticketProviderConfigJson
+          ? JSON.parse(req.ticketProviderConfigJson)
+          : {}
+      }
 
       const [project] = await db
         .update(projects)
@@ -238,6 +246,9 @@ export default (router: ConnectRouter) =>
           maxConcurrentJobs: project.maxConcurrentJobs,
           isActive: project.isActive,
           claudeMdTemplate: project.claudeMdTemplate || undefined,
+          ticketProviderConfigJson: project.ticketProviderConfig
+            ? JSON.stringify(project.ticketProviderConfig)
+            : undefined,
         }),
       })
     },
