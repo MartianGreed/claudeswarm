@@ -1,0 +1,346 @@
+syntax = "proto3";
+
+package claudeswarm.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Auth Service
+service AuthService {
+  rpc SendMagicLink(SendMagicLinkRequest) returns (SendMagicLinkResponse);
+  rpc VerifyMagicLink(VerifyMagicLinkRequest) returns (VerifyMagicLinkResponse);
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+message SendMagicLinkRequest {
+  string email = 1;
+}
+
+message SendMagicLinkResponse {
+  bool success = 1;
+}
+
+message VerifyMagicLinkRequest {
+  string token = 1;
+}
+
+message VerifyMagicLinkResponse {
+  string session_token = 1;
+  User user = 2;
+}
+
+message GetCurrentUserRequest {}
+
+message GetCurrentUserResponse {
+  User user = 1;
+}
+
+message LogoutRequest {}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+// Project Service
+service ProjectService {
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+  rpc GetProjectStats(GetProjectStatsRequest) returns (GetProjectStatsResponse);
+}
+
+message ListProjectsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListProjectsResponse {
+  repeated Project projects = 1;
+  int32 total = 2;
+}
+
+message GetProjectRequest {
+  string project_id = 1;
+}
+
+message GetProjectResponse {
+  Project project = 1;
+}
+
+message CreateProjectRequest {
+  string name = 1;
+  string repo_url = 2;
+  string default_branch = 3;
+  VcsProvider vcs_provider = 4;
+  string vcs_token = 5;
+  TicketProvider ticket_provider = 6;
+  string ticket_provider_config_json = 7;
+  string ticket_provider_token = 8;
+  int32 max_concurrent_jobs = 9;
+}
+
+message CreateProjectResponse {
+  Project project = 1;
+}
+
+message UpdateProjectRequest {
+  string project_id = 1;
+  optional string name = 2;
+  optional int32 max_concurrent_jobs = 3;
+  optional bool is_active = 4;
+  optional string claude_md_template = 5;
+}
+
+message UpdateProjectResponse {
+  Project project = 1;
+}
+
+message DeleteProjectRequest {
+  string project_id = 1;
+}
+
+message DeleteProjectResponse {
+  bool success = 1;
+}
+
+message GetProjectStatsRequest {
+  string project_id = 1;
+}
+
+message GetProjectStatsResponse {
+  ProjectStats stats = 1;
+}
+
+// Job Service
+service JobService {
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+  rpc GetJob(GetJobRequest) returns (GetJobResponse);
+  rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
+  rpc RetryJob(RetryJobRequest) returns (RetryJobResponse);
+  rpc AnswerClarification(AnswerClarificationRequest) returns (AnswerClarificationResponse);
+  rpc GetJobLogs(GetJobLogsRequest) returns (GetJobLogsResponse);
+  rpc StreamJobUpdates(StreamJobUpdatesRequest) returns (stream JobUpdate);
+}
+
+message ListJobsRequest {
+  string project_id = 1;
+  optional JobStatus status = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message ListJobsResponse {
+  repeated Job jobs = 1;
+  int32 total = 2;
+}
+
+message GetJobRequest {
+  string job_id = 1;
+}
+
+message GetJobResponse {
+  Job job = 1;
+  Ticket ticket = 2;
+}
+
+message CancelJobRequest {
+  string job_id = 1;
+}
+
+message CancelJobResponse {
+  bool success = 1;
+}
+
+message RetryJobRequest {
+  string job_id = 1;
+}
+
+message RetryJobResponse {
+  bool success = 1;
+}
+
+message AnswerClarificationRequest {
+  string job_id = 1;
+  string answer = 2;
+}
+
+message AnswerClarificationResponse {
+  bool success = 1;
+}
+
+message GetJobLogsRequest {
+  string job_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetJobLogsResponse {
+  repeated JobLog logs = 1;
+  int32 total = 2;
+}
+
+message StreamJobUpdatesRequest {
+  string job_id = 1;
+}
+
+message JobUpdate {
+  string job_id = 1;
+  JobStatus status = 2;
+  int32 iteration = 3;
+  optional string clarification_question = 4;
+  optional string pr_url = 5;
+  optional string error_message = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// Ticket Service
+service TicketService {
+  rpc SyncTickets(SyncTicketsRequest) returns (SyncTicketsResponse);
+  rpc ListTickets(ListTicketsRequest) returns (ListTicketsResponse);
+  rpc GetTicket(GetTicketRequest) returns (GetTicketResponse);
+}
+
+message SyncTicketsRequest {
+  string project_id = 1;
+}
+
+message SyncTicketsResponse {
+  int32 synced_count = 1;
+  int32 created_jobs_count = 2;
+}
+
+message ListTicketsRequest {
+  string project_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message ListTicketsResponse {
+  repeated Ticket tickets = 1;
+  int32 total = 2;
+}
+
+message GetTicketRequest {
+  string ticket_id = 1;
+}
+
+message GetTicketResponse {
+  Ticket ticket = 1;
+}
+
+// Enums
+enum JobStatus {
+  JOB_STATUS_UNSPECIFIED = 0;
+  JOB_STATUS_PENDING = 1;
+  JOB_STATUS_WAITING_DEPENDENCY = 2;
+  JOB_STATUS_RUNNING = 3;
+  JOB_STATUS_NEEDS_CLARIFICATION = 4;
+  JOB_STATUS_PR_CREATED = 5;
+  JOB_STATUS_COMPLETED = 6;
+  JOB_STATUS_FAILED = 7;
+  JOB_STATUS_CANCELLED = 8;
+}
+
+enum TicketProvider {
+  TICKET_PROVIDER_UNSPECIFIED = 0;
+  TICKET_PROVIDER_LINEAR = 1;
+  TICKET_PROVIDER_NOTION = 2;
+  TICKET_PROVIDER_JIRA = 3;
+}
+
+enum VcsProvider {
+  VCS_PROVIDER_UNSPECIFIED = 0;
+  VCS_PROVIDER_GITHUB = 1;
+  VCS_PROVIDER_GITLAB = 2;
+}
+
+// Messages
+message User {
+  string id = 1;
+  string email = 2;
+  optional string name = 3;
+  optional string avatar_url = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message Organization {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  repeated string allowed_domains = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message Project {
+  string id = 1;
+  string organization_id = 2;
+  string name = 3;
+  string slug = 4;
+  string repo_url = 5;
+  string default_branch = 6;
+  VcsProvider vcs_provider = 7;
+  TicketProvider ticket_provider = 8;
+  int32 max_concurrent_jobs = 9;
+  bool is_active = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+message ProjectStats {
+  string project_id = 1;
+  string project_name = 2;
+  int32 active_jobs = 3;
+  int32 max_concurrent_jobs = 4;
+  int32 pending_jobs = 5;
+  int32 completed_today = 6;
+  int32 failed_today = 7;
+  int32 needs_clarification = 8;
+}
+
+message Ticket {
+  string id = 1;
+  string project_id = 2;
+  string external_id = 3;
+  string external_url = 4;
+  string title = 5;
+  optional string description = 6;
+  optional string priority = 7;
+  repeated string labels = 8;
+  repeated string depends_on = 9;
+  google.protobuf.Timestamp last_synced_at = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+message Job {
+  string id = 1;
+  string project_id = 2;
+  string ticket_id = 3;
+  JobStatus status = 4;
+  int32 iteration = 5;
+  int32 max_iterations = 6;
+  optional string sandbox_path = 7;
+  optional string branch_name = 8;
+  optional string pr_url = 9;
+  optional int32 pr_number = 10;
+  optional string blocked_by_job_id = 11;
+  optional string error_message = 12;
+  optional string worker_id = 13;
+  optional string clarification_question = 14;
+  optional string clarification_answer = 15;
+  optional google.protobuf.Timestamp started_at = 16;
+  optional google.protobuf.Timestamp completed_at = 17;
+  google.protobuf.Timestamp created_at = 18;
+  google.protobuf.Timestamp updated_at = 19;
+}
+
+message JobLog {
+  string id = 1;
+  string job_id = 2;
+  int32 iteration = 3;
+  string event_type = 4;
+  optional string event_data_json = 5;
+  optional string claude_output = 6;
+  google.protobuf.Timestamp created_at = 7;
+}

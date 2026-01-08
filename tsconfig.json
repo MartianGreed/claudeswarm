@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "lib": ["ES2022"],
+    "types": ["bun"],
+    "paths": {
+      "@claudeswarm/db": ["./packages/db/src/index.ts"],
+      "@claudeswarm/shared": ["./packages/shared/src/index.ts"],
+      "@claudeswarm/queue": ["./packages/queue/src/index.ts"],
+      "@claudeswarm/proto": ["./packages/proto/src/index.ts"],
+      "@claudeswarm/ticket-providers": ["./packages/ticket-providers/src/index.ts"],
+      "@claudeswarm/vcs": ["./packages/vcs/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}

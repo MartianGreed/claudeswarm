@@ -1,0 +1,21 @@
+{
+  "name": "@claudeswarm/worker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "type:check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@claudeswarm/db": "workspace:*",
+    "@claudeswarm/queue": "workspace:*",
+    "@claudeswarm/shared": "workspace:*",
+    "@claudeswarm/ticket-providers": "workspace:*",
+    "@claudeswarm/vcs": "workspace:*",
+    "simple-git": "^3.27.0"
+  }
+}

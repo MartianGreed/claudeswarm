@@ -1,0 +1,24 @@
+{
+  "name": "@claudeswarm/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "type:check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@claudeswarm/db": "workspace:*",
+    "@claudeswarm/proto": "workspace:*",
+    "@claudeswarm/queue": "workspace:*",
+    "@claudeswarm/shared": "workspace:*",
+    "@claudeswarm/ticket-providers": "workspace:*",
+    "@connectrpc/connect": "^2.0.0",
+    "@connectrpc/connect-node": "^2.0.0",
+    "hono": "^4.6.14",
+    "@hono/node-server": "^1.13.7"
+  }
+}

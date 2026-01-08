@@ -1,0 +1,28 @@
+{
+  "name": "claudeswarm",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:api": "bun run --filter @claudeswarm/api dev",
+    "dev:dashboard": "bun run --filter @claudeswarm/dashboard dev",
+    "dev:worker": "bun run --filter @claudeswarm/worker dev",
+    "build": "bun run --filter '*' build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "type:check": "bun run --filter '*' type:check",
+    "test": "bun run --filter '*' test",
+    "db:generate": "bun run --filter @claudeswarm/db generate",
+    "db:migrate": "bun run --filter @claudeswarm/db migrate",
+    "db:studio": "bun run --filter @claudeswarm/db studio",
+    "proto:generate": "bun run --filter @claudeswarm/proto generate"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "bun@1.1.38"
+}
