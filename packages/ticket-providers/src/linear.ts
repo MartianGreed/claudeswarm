@@ -53,9 +53,13 @@ export class LinearProvider implements TicketProvider {
     }
 
     try {
-      const issues = await client.issues({
+      const team = await client.team(config.teamId as string)
+      if (!team) {
+        throw new TicketProviderError(`Team "${config.teamId}" not found`, this.name)
+      }
+
+      const issues = await team.issues({
         filter: {
-          team: { id: { eq: config.teamId as string } },
           state: { type: { in: ['backlog', 'unstarted'] } },
         },
       })
@@ -63,6 +67,7 @@ export class LinearProvider implements TicketProvider {
       const ticketPromises = issues.nodes.map((issue) => mapToTicketData(issue))
       return Promise.all(ticketPromises)
     } catch (error) {
+      if (error instanceof TicketProviderError) throw error
       throw new TicketProviderError(
         `Failed to fetch Linear issues: ${error instanceof Error ? error.message : 'Unknown error'}`,
         this.name,
