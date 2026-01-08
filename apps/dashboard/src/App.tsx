@@ -1,76 +1,148 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from './lib/auth'
+import { JobDetailPage } from './pages/JobDetail'
+import { JobsPage } from './pages/Jobs'
+import { LoginPage } from './pages/Login'
+import { NewProjectPage } from './pages/NewProject'
+import { ProjectDetailPage } from './pages/ProjectDetail'
+import { ProjectsPage } from './pages/Projects'
+import { VerifyPage } from './pages/Verify'
 
-type View = 'projects' | 'jobs'
+type Route = 'login' | 'verify' | 'projects' | 'new-project' | 'project-detail' | 'jobs' | 'job-detail'
+
+function getInitialRoute(): Route {
+  const path = window.location.pathname
+  const params = new URLSearchParams(window.location.search)
+
+  if (path === '/verify' && params.get('token')) {
+    return 'verify'
+  }
+  if (path === '/login') {
+    return 'login'
+  }
+  if (path === '/projects/new') {
+    return 'new-project'
+  }
+  return 'projects'
+}
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<View>('projects')
+  const { isAuthenticated, isLoading } = useAuth()
+  const [route, setRoute] = useState<Route>(getInitialRoute)
+  const [verifyToken, setVerifyToken] = useState<string | null>(null)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  const [selectedProjectName, setSelectedProjectName] = useState<string>('')
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">ClaudeSwarm</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setCurrentView('projects')}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  currentView === 'projects'
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Projects
-              </button>
-              <button
-                onClick={() => setCurrentView('jobs')}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  currentView === 'jobs'
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Jobs
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get('token')
+    if (token && route === 'verify') {
+      setVerifyToken(token)
+    }
+  }, [route])
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {currentView === 'projects' ? <ProjectsView /> : <JobsView />}
-      </main>
-    </div>
-  )
-}
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && route !== 'login' && route !== 'verify') {
+      setRoute('login')
+      window.history.pushState({}, '', '/login')
+    }
+  }, [isLoading, isAuthenticated, route])
 
-function ProjectsView() {
-  return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Projects</h2>
-        <p className="text-gray-500">
-          No projects yet. Create a project to start processing tickets.
-        </p>
-        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-          Create Project
-        </button>
+  const navigate = (newRoute: Route, path?: string) => {
+    setRoute(newRoute)
+    window.history.pushState({}, '', path || `/${newRoute}`)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
-    </div>
-  )
-}
+    )
+  }
 
-function JobsView() {
+  if (route === 'login') {
+    return <LoginPage />
+  }
+
+  if (route === 'verify' && verifyToken) {
+    return (
+      <VerifyPage
+        token={verifyToken}
+        onSuccess={() => {
+          navigate('projects', '/')
+        }}
+      />
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />
+  }
+
+  if (route === 'new-project') {
+    return (
+      <NewProjectPage
+        onBack={() => navigate('projects', '/')}
+        onSuccess={() => navigate('projects', '/')}
+      />
+    )
+  }
+
+  if (route === 'project-detail' && selectedProjectId) {
+    return (
+      <ProjectDetailPage
+        projectId={selectedProjectId}
+        onBack={() => navigate('projects', '/')}
+        onDeleted={() => {
+          setSelectedProjectId(null)
+          navigate('projects', '/')
+        }}
+        onViewJobs={(projectName) => {
+          setSelectedProjectName(projectName)
+          navigate('jobs', `/projects/${selectedProjectId}/jobs`)
+        }}
+      />
+    )
+  }
+
+  if (route === 'jobs' && selectedProjectId) {
+    return (
+      <JobsPage
+        projectId={selectedProjectId}
+        projectName={selectedProjectName}
+        onBack={() => navigate('project-detail', `/projects/${selectedProjectId}`)}
+        onSelectJob={(jobId) => {
+          setSelectedJobId(jobId)
+          navigate('job-detail', `/jobs/${jobId}`)
+        }}
+      />
+    )
+  }
+
+  if (route === 'job-detail' && selectedJobId) {
+    return (
+      <JobDetailPage
+        jobId={selectedJobId}
+        onBack={() => {
+          if (selectedProjectId) {
+            navigate('jobs', `/projects/${selectedProjectId}/jobs`)
+          } else {
+            navigate('projects', '/')
+          }
+        }}
+      />
+    )
+  }
+
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Jobs</h2>
-        <p className="text-gray-500">
-          No jobs running. Sync tickets from a project to create jobs.
-        </p>
-      </div>
-    </div>
+    <ProjectsPage
+      onCreateProject={() => navigate('new-project', '/projects/new')}
+      onSelectProject={(projectId) => {
+        setSelectedProjectId(projectId)
+        navigate('project-detail', `/projects/${projectId}`)
+      }}
+    />
   )
 }
