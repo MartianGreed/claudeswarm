@@ -133,6 +133,21 @@ export default (router: ConnectRouter) =>
             completedAt: j.completedAt ? timestampFromDate(j.completedAt) : undefined,
             createdAt: timestampFromDate(j.createdAt),
             updatedAt: timestampFromDate(j.updatedAt),
+            ticket: j.ticket
+              ? create(TicketSchema, {
+                  id: j.ticket.id,
+                  projectId: j.ticket.projectId,
+                  externalId: j.ticket.externalId,
+                  externalUrl: j.ticket.externalUrl,
+                  title: j.ticket.title,
+                  description: j.ticket.description || undefined,
+                  priority: j.ticket.priority || undefined,
+                  labels: j.ticket.labels || [],
+                  dependsOn: j.ticket.dependsOn || [],
+                  lastSyncedAt: timestampFromDate(j.ticket.lastSyncedAt),
+                  createdAt: timestampFromDate(j.ticket.createdAt),
+                })
+              : undefined,
           }),
         ),
         total,

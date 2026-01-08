@@ -114,10 +114,13 @@ export function JobsPage({ projectId, projectName, onBack, onSelectJob }: JobsPa
                         onClick={() => onSelectJob(job.id)}
                         className="hover:bg-gray-50 cursor-pointer"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {job.ticketId.slice(0, 8)}...
+                            {job.ticket?.title || `Ticket ${job.ticketId.slice(0, 8)}`}
                           </div>
+                          {job.ticket?.externalId && (
+                            <div className="text-xs text-gray-500">{job.ticket.externalId}</div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
