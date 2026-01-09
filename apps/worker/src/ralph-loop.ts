@@ -36,18 +36,35 @@ export class RalphLoop {
     this.state.prompt = this.buildPrompt()
   }
 
+  private async sandboxExists(path: string): Promise<boolean> {
+    try {
+      const gitDir = Bun.file(`${path}/.git`)
+      const jjDir = Bun.file(`${path}/.jj`)
+      return (await gitDir.exists()) || (await jjDir.exists())
+    } catch {
+      return false
+    }
+  }
+
   async run(): Promise<void> {
-    // Setup sandbox
-    const { sandboxPath, branchName } = await this.sandbox.create(this.job)
-    this.sandboxPath = sandboxPath
-    this.branchName = branchName
+    // Check if sandbox already exists (from previous run)
+    if (this.job.sandboxPath && (await this.sandboxExists(this.job.sandboxPath))) {
+      console.log(`Reusing existing sandbox: ${this.job.sandboxPath}`)
+      this.sandboxPath = this.job.sandboxPath
+      this.branchName = this.job.branchName || `claudeswarm/${this.job.externalTicketId}`
+    } else {
+      // Create new sandbox
+      const { sandboxPath, branchName } = await this.sandbox.create(this.job)
+      this.sandboxPath = sandboxPath
+      this.branchName = branchName
+    }
 
     // Update job with sandbox info
     await db
       .update(jobs)
       .set({
-        sandboxPath,
-        branchName,
+        sandboxPath: this.sandboxPath,
+        branchName: this.branchName,
         status: 'running',
         startedAt: new Date(),
         updatedAt: new Date(),
@@ -273,10 +290,7 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
       eventType: 'max_iterations_reached',
     })
 
-    // Cleanup sandbox
-    if (this.sandboxPath) {
-      await this.sandbox.cleanup(this.sandboxPath)
-    }
+    // Keep sandbox for retry - only cleanup on success
   }
 
   private async handleError(error: Error): Promise<void> {
@@ -297,10 +311,7 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
       eventData: { message: error.message, stack: error.stack },
     })
 
-    // Cleanup sandbox
-    if (this.sandboxPath) {
-      await this.sandbox.cleanup(this.sandboxPath)
-    }
+    // Keep sandbox on error for retry - only cleanup on success
   }
 
   async resumeWithAnswer(answer: string): Promise<void> {

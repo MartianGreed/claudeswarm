@@ -58,6 +58,8 @@ export async function recoverOrphanedJobs(db: ReturnType<typeof createDbClient>)
       completionPromise: 'TASK COMPLETE',
       sandboxBasePath: job.project.sandboxBasePath,
       claudeMdTemplate: job.project.claudeMdTemplate,
+      sandboxPath: job.sandboxPath,
+      branchName: job.branchName,
     })
     console.log(`  Re-queued job ${job.id}`)
   }

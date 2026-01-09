@@ -285,6 +285,8 @@ export default (router: ConnectRouter) =>
         completionPromise: 'TASK COMPLETE',
         sandboxBasePath: job.project.sandboxBasePath,
         claudeMdTemplate: job.project.claudeMdTemplate,
+        sandboxPath: job.sandboxPath,
+        branchName: job.branchName,
       })
 
       return create(RetryJobResponseSchema, { success: true })

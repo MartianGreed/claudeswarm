@@ -41,6 +41,7 @@ export class ClaudeExecutor {
         env: {
           ...process.env,
           CLAUDE_VCS: 'jj',
+          ANTHROPIC_API_KEY: undefined, // Force subscription mode
         },
         stdout: 'pipe',
         stderr: 'pipe',

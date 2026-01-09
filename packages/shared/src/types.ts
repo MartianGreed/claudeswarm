@@ -49,6 +49,8 @@ export interface JobPayload {
   completionPromise: string | null
   sandboxBasePath: string
   claudeMdTemplate: string | null
+  sandboxPath?: string | null
+  branchName?: string | null
 }
 
 export interface ClaudeLoopState {
