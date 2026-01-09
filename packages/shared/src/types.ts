@@ -15,6 +15,7 @@ export interface TicketData {
   labels: string[]
   dependsOn: string[]
   status: string
+  stateType?: string
   comments: TicketComment[]
   rawData: unknown
 }

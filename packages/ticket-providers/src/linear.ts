@@ -43,6 +43,7 @@ async function mapToTicketData(issue: Issue): Promise<TicketData> {
     labels: labels.nodes.map((l) => l.name),
     dependsOn: [],
     status: state?.name || 'Unknown',
+    stateType: state?.type,
     comments,
     rawData: issue,
   }

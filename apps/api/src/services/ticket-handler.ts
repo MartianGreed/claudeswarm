@@ -104,12 +104,8 @@ export default (router: ConnectRouter) =>
 
         syncedCount++
 
-        // Only create jobs for 'todo' status tickets (not backlog)
-        const isTodo =
-          ticketData.status.toLowerCase() === 'todo' ||
-          ticketData.status.toLowerCase() === 'unstarted'
-
-        if (!isTodo) {
+        // Only create jobs for 'unstarted' state type (not backlog)
+        if (ticketData.stateType !== 'unstarted') {
           // Backlog ticket - store it but don't create a job
           continue
         }
