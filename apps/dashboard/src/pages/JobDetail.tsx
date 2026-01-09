@@ -2,6 +2,7 @@ import type { JobLog } from '@claudeswarm/proto'
 import { JobStatus } from '@claudeswarm/proto'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { getJobClient } from '../lib/api'
 
 interface JobDetailPageProps {
@@ -257,7 +258,9 @@ export function JobDetailPage({ jobId, onBack }: JobDetailPageProps) {
         {needsClarification && (
           <div className="bg-yellow-50 rounded-lg border border-yellow-200 p-6">
             <h3 className="text-lg font-semibold text-yellow-800 mb-2">Clarification Needed</h3>
-            <p className="text-yellow-700 mb-4">{job.clarificationQuestion}</p>
+            <div className="text-yellow-700 mb-4 prose prose-sm prose-yellow max-w-none">
+              <ReactMarkdown>{job.clarificationQuestion || ''}</ReactMarkdown>
+            </div>
             <textarea
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
