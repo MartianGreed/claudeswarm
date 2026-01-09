@@ -136,29 +136,62 @@ export class RalphLoop {
         eventData: { prompt: this.state.prompt.slice(0, 1000) },
       })
 
+      // Create output log entry for real-time streaming
+      const [outputLogEntry] = await db
+        .insert(jobLogs)
+        .values({
+          jobId: this.job.jobId,
+          iteration: this.state.iteration,
+          eventType: 'iteration_output',
+          claudeOutput: '',
+        })
+        .returning({ id: jobLogs.id })
+
+      // Set up output buffering for periodic flushes
+      let accumulatedOutput = ''
+      let lastFlush = Date.now()
+      const FLUSH_INTERVAL = 2000 // 2 seconds
+
+      const flushOutput = async () => {
+        if (accumulatedOutput.length > 0) {
+          await db
+            .update(jobLogs)
+            .set({ claudeOutput: accumulatedOutput.slice(0, 50000) })
+            .where(eq(jobLogs.id, outputLogEntry.id))
+          lastFlush = Date.now()
+        }
+      }
+
       // Execute Claude
       const executor = new ClaudeExecutor({
         sandboxPath: this.sandboxPath!,
         prompt: this.state.prompt,
         timeout: 10 * 60 * 1000, // 10 minutes per iteration
-        onOutput: (_chunk) => {
-          // Could stream to real-time updates here
+        onOutput: (chunk) => {
+          accumulatedOutput += chunk
+          const now = Date.now()
+          if (now - lastFlush > FLUSH_INTERVAL || accumulatedOutput.length > 10000) {
+            flushOutput()
+          }
         },
       })
 
       const { output, exitCode } = await executor.execute()
       this.state.lastOutput = output
 
+      // Final flush of any remaining output
+      accumulatedOutput = output
+      await flushOutput()
+
       // Parse output for signals
       const signals = this.parseClaudeOutput(output)
 
-      // Log iteration end
+      // Log iteration end (signals only, output already stored)
       await db.insert(jobLogs).values({
         jobId: this.job.jobId,
         iteration: this.state.iteration,
         eventType: 'iteration_end',
         eventData: { exitCode, signals },
-        claudeOutput: output.slice(0, 50000),
       })
 
       // Check for completion promise
