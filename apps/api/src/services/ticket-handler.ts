@@ -11,7 +11,7 @@ import {
 import { QUEUE_NAMES } from '@claudeswarm/queue'
 import { createTicketProvider } from '@claudeswarm/ticket-providers'
 import type { ConnectRouter } from '@connectrpc/connect'
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq, notInArray } from 'drizzle-orm'
 import { env } from '../env'
 import type { AuthUser } from '../middleware/auth'
 import { queue } from '../queue'
@@ -135,9 +135,35 @@ export default (router: ConnectRouter) =>
         }
       }
 
+      // Delete tickets that no longer exist upstream
+      let deletedCount = 0
+      const upstreamExternalIds = readyTickets.map((t) => t.externalId)
+
+      if (upstreamExternalIds.length > 0) {
+        // Delete tickets that exist locally but not in upstream
+        const deleted = await db
+          .delete(tickets)
+          .where(
+            and(
+              eq(tickets.projectId, project.id),
+              notInArray(tickets.externalId, upstreamExternalIds),
+            ),
+          )
+          .returning()
+        deletedCount = deleted.length
+      } else {
+        // If no upstream tickets, delete all local tickets for this project
+        const deleted = await db
+          .delete(tickets)
+          .where(eq(tickets.projectId, project.id))
+          .returning()
+        deletedCount = deleted.length
+      }
+
       return create(SyncTicketsResponseSchema, {
         syncedCount,
         createdJobsCount,
+        deletedCount,
       })
     },
 

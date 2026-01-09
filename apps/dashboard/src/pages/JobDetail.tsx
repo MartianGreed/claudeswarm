@@ -205,8 +205,13 @@ export function JobDetailPage({ jobId, onBack }: JobDetailPageProps) {
             )}
             {job.errorMessage && (
               <div className="col-span-2">
-                <span className="text-gray-500">Error:</span>{' '}
-                <span className="text-red-600">{job.errorMessage}</span>
+                <span className="text-gray-500">Error:</span>
+                <span className="text-red-600 block">{job.errorMessage}</span>
+                {job.errorStack && (
+                  <pre className="mt-2 text-xs bg-red-50 p-2 rounded overflow-auto max-h-48 text-red-800">
+                    {job.errorStack}
+                  </pre>
+                )}
               </div>
             )}
           </div>
