@@ -65,6 +65,10 @@ export class LinearProvider implements TicketProvider {
       throw new TicketProviderError('teamId is required in config', this.name)
     }
 
+    if (!config.linearProjectId) {
+      throw new TicketProviderError('linearProjectId is required in config', this.name)
+    }
+
     try {
       const team = await client.team(config.teamId as string)
       if (!team) {
@@ -74,6 +78,7 @@ export class LinearProvider implements TicketProvider {
       const issues = await team.issues({
         filter: {
           state: { type: { in: ['backlog', 'unstarted'] } },
+          project: { id: { eq: config.linearProjectId as string } },
         },
       })
 

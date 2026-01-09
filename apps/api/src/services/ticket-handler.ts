@@ -160,27 +160,44 @@ export default (router: ConnectRouter) =>
         }
       }
 
-      // Delete tickets that no longer exist upstream
+      // Delete tickets that no longer exist upstream, EXCEPT those with completed jobs
       let deletedCount = 0
       const upstreamExternalIds = readyTickets.map((t) => t.externalId)
 
+      // Find ticket IDs that have at least one completed job (preserve history)
+      const ticketsWithCompletedJobs = await db
+        .selectDistinct({ ticketId: jobs.ticketId })
+        .from(jobs)
+        .where(eq(jobs.status, 'completed'))
+
+      const completedTicketIds = ticketsWithCompletedJobs.map((j) => j.ticketId)
+
       if (upstreamExternalIds.length > 0) {
-        // Delete tickets that exist locally but not in upstream
+        const deleteConditions = [
+          eq(tickets.projectId, project.id),
+          notInArray(tickets.externalId, upstreamExternalIds),
+        ]
+
+        if (completedTicketIds.length > 0) {
+          deleteConditions.push(notInArray(tickets.id, completedTicketIds))
+        }
+
         const deleted = await db
           .delete(tickets)
-          .where(
-            and(
-              eq(tickets.projectId, project.id),
-              notInArray(tickets.externalId, upstreamExternalIds),
-            ),
-          )
+          .where(and(...deleteConditions))
           .returning()
         deletedCount = deleted.length
       } else {
-        // If no upstream tickets, delete all local tickets for this project
+        // If no upstream tickets, only delete tickets without completed jobs
+        const deleteConditions: ReturnType<typeof eq>[] = [eq(tickets.projectId, project.id)]
+
+        if (completedTicketIds.length > 0) {
+          deleteConditions.push(notInArray(tickets.id, completedTicketIds))
+        }
+
         const deleted = await db
           .delete(tickets)
-          .where(eq(tickets.projectId, project.id))
+          .where(and(...deleteConditions))
           .returning()
         deletedCount = deleted.length
       }

@@ -24,6 +24,7 @@ export interface ProviderConfig {
   projectId?: string
   workspaceId?: string
   teamId?: string
+  linearProjectId?: string
   [key: string]: unknown
 }
 
