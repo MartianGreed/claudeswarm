@@ -27,12 +27,13 @@ export class RalphLoop {
       iteration: 0,
       maxIterations: job.maxIterations,
       completionPromise: job.completionPromise,
-      prompt: this.buildPrompt(),
+      prompt: '',
       isComplete: false,
       needsClarification: false,
       clarificationQuestion: null,
       lastOutput: null,
     }
+    this.state.prompt = this.buildPrompt()
   }
 
   async run(): Promise<void> {
