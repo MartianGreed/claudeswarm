@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
   boolean,
   integer,
@@ -240,46 +240,54 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   jobs: many(jobs),
 }))
 
-export const jobs = pgTable('jobs', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  projectId: uuid('project_id')
-    .references(() => projects.id, { onDelete: 'cascade' })
-    .notNull(),
-  ticketId: uuid('ticket_id')
-    .references(() => tickets.id, { onDelete: 'cascade' })
-    .notNull(),
+export const jobs = pgTable(
+  'jobs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id')
+      .references(() => projects.id, { onDelete: 'cascade' })
+      .notNull(),
+    ticketId: uuid('ticket_id')
+      .references(() => tickets.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  status: jobStatusEnum('status').notNull().default('pending'),
+    status: jobStatusEnum('status').notNull().default('pending'),
 
-  iteration: integer('iteration').notNull().default(0),
-  maxIterations: integer('max_iterations').notNull().default(100),
-  completionPromise: text('completion_promise').default('TASK COMPLETE'),
+    iteration: integer('iteration').notNull().default(0),
+    maxIterations: integer('max_iterations').notNull().default(100),
+    completionPromise: text('completion_promise').default('TASK COMPLETE'),
 
-  sandboxPath: text('sandbox_path'),
-  branchName: text('branch_name'),
+    sandboxPath: text('sandbox_path'),
+    branchName: text('branch_name'),
 
-  prUrl: text('pr_url'),
-  prNumber: integer('pr_number'),
+    prUrl: text('pr_url'),
+    prNumber: integer('pr_number'),
 
-  blockedByJobId: uuid('blocked_by_job_id'),
+    blockedByJobId: uuid('blocked_by_job_id'),
 
-  errorMessage: text('error_message'),
-  errorStack: text('error_stack'),
+    errorMessage: text('error_message'),
+    errorStack: text('error_stack'),
 
-  workerId: text('worker_id'),
+    workerId: text('worker_id'),
 
-  clarificationQuestion: text('clarification_question'),
-  clarificationAnswer: text('clarification_answer'),
+    clarificationQuestion: text('clarification_question'),
+    clarificationAnswer: text('clarification_answer'),
 
-  pendingPermissionRequest: text('pending_permission_request'),
+    pendingPermissionRequest: text('pending_permission_request'),
 
-  finalOutput: text('final_output'),
+    finalOutput: text('final_output'),
 
-  startedAt: timestamp('started_at'),
-  completedAt: timestamp('completed_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+    startedAt: timestamp('started_at'),
+    completedAt: timestamp('completed_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('job_ticket_active_unique')
+      .on(table.ticketId)
+      .where(sql`status NOT IN ('completed', 'pr_created', 'failed', 'cancelled')`),
+  ],
+)
 
 export const jobsRelations = relations(jobs, ({ one, many }) => ({
   project: one(projects, {

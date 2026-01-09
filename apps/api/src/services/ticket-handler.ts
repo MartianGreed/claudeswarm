@@ -121,38 +121,51 @@ export default (router: ConnectRouter) =>
           !existingJob || existingJob.status === 'completed' || existingJob.status === 'pr_created'
 
         if (shouldCreateJob) {
-          const [newJob] = await db
-            .insert(jobs)
-            .values({
-              projectId: project.id,
-              ticketId: ticketId,
-              status: 'pending',
-            })
-            .returning()
+          try {
+            const [newJob] = await db
+              .insert(jobs)
+              .values({
+                projectId: project.id,
+                ticketId: ticketId,
+                status: 'pending',
+              })
+              .returning()
 
-          await queue.send(QUEUE_NAMES.JOB_PROCESS, {
-            jobId: newJob.id,
-            projectId: project.id,
-            ticketId: ticketId,
-            externalTicketId: ticketData.externalId,
-            repoUrl: project.repoUrl,
-            defaultBranch: project.defaultBranch,
-            vcsProvider: project.vcsProvider,
-            vcsToken: project.vcsToken,
-            title: ticketData.title,
-            description: ticketData.description || '',
-            maxIterations: 100,
-            completionPromise: 'TASK COMPLETE',
-            sandboxBasePath: project.sandboxBasePath,
-            claudeMdTemplate: project.claudeMdTemplate,
-            claudePermissionsConfig: project.claudePermissionsConfig,
-            ticketProvider: project.ticketProvider,
-            ticketProviderToken: project.ticketProviderToken,
-            ticketProviderConfig: project.ticketProviderConfig,
-            ticketComments: ticketData.comments,
-          })
+            await queue.send(
+              QUEUE_NAMES.JOB_PROCESS,
+              {
+                jobId: newJob.id,
+                projectId: project.id,
+                ticketId: ticketId,
+                externalTicketId: ticketData.externalId,
+                repoUrl: project.repoUrl,
+                defaultBranch: project.defaultBranch,
+                vcsProvider: project.vcsProvider,
+                vcsToken: project.vcsToken,
+                title: ticketData.title,
+                description: ticketData.description || '',
+                maxIterations: 100,
+                completionPromise: 'TASK COMPLETE',
+                sandboxBasePath: project.sandboxBasePath,
+                claudeMdTemplate: project.claudeMdTemplate,
+                claudePermissionsConfig: project.claudePermissionsConfig,
+                ticketProvider: project.ticketProvider,
+                ticketProviderToken: project.ticketProviderToken,
+                ticketProviderConfig: project.ticketProviderConfig,
+                ticketComments: ticketData.comments,
+              },
+              { singletonKey: `ticket:${ticketId}` },
+            )
 
-          createdJobsCount++
+            createdJobsCount++
+          } catch (error) {
+            // Unique constraint violation = another job already exists for this ticket
+            // This is expected in race conditions and safe to ignore
+            if (error instanceof Error && error.message.includes('job_ticket_active_unique')) {
+              continue
+            }
+            throw error
+          }
         }
       }
 
