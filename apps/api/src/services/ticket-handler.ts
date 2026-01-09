@@ -129,6 +129,7 @@ export default (router: ConnectRouter) =>
             completionPromise: 'TASK COMPLETE',
             sandboxBasePath: project.sandboxBasePath,
             claudeMdTemplate: project.claudeMdTemplate,
+            claudePermissionsConfig: project.claudePermissionsConfig,
           })
 
           createdJobsCount++

@@ -106,6 +106,12 @@ export const projects = pgTable(
     maxConcurrentJobs: integer('max_concurrent_jobs').notNull().default(3),
     sandboxBasePath: text('sandbox_base_path').notNull().default('/tmp/claudeswarm/sandboxes'),
     claudeMdTemplate: text('claude_md_template'),
+    claudePermissionsConfig: jsonb('claude_permissions_config')
+      .$type<{ allow: string[] }>()
+      .notNull()
+      .default({
+        allow: ['Bash(*)', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
+      }),
 
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at').defaultNow().notNull(),

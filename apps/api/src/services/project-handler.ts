@@ -114,6 +114,7 @@ export default (router: ConnectRouter) =>
             maxConcurrentJobs: p.maxConcurrentJobs,
             isActive: p.isActive,
             claudeMdTemplate: p.claudeMdTemplate || undefined,
+            claudePermissionsConfigJson: JSON.stringify(p.claudePermissionsConfig),
           }),
         ),
         total,
@@ -153,6 +154,7 @@ export default (router: ConnectRouter) =>
           ticketProviderConfigJson: project.ticketProviderConfig
             ? JSON.stringify(project.ticketProviderConfig)
             : undefined,
+          claudePermissionsConfigJson: JSON.stringify(project.claudePermissionsConfig),
         }),
       })
     },
@@ -197,6 +199,7 @@ export default (router: ConnectRouter) =>
           maxConcurrentJobs: project.maxConcurrentJobs,
           isActive: project.isActive,
           claudeMdTemplate: project.claudeMdTemplate || undefined,
+          claudePermissionsConfigJson: JSON.stringify(project.claudePermissionsConfig),
         }),
       })
     },
@@ -219,6 +222,11 @@ export default (router: ConnectRouter) =>
         updates.ticketProviderConfig = req.ticketProviderConfigJson
           ? JSON.parse(req.ticketProviderConfigJson)
           : {}
+      }
+      if (req.claudePermissionsConfigJson !== undefined) {
+        updates.claudePermissionsConfig = req.claudePermissionsConfigJson
+          ? JSON.parse(req.claudePermissionsConfigJson)
+          : { allow: [] }
       }
 
       const [project] = await db
@@ -249,6 +257,7 @@ export default (router: ConnectRouter) =>
           ticketProviderConfigJson: project.ticketProviderConfig
             ? JSON.stringify(project.ticketProviderConfig)
             : undefined,
+          claudePermissionsConfigJson: JSON.stringify(project.claudePermissionsConfig),
         }),
       })
     },

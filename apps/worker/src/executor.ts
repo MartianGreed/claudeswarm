@@ -25,17 +25,9 @@ export class ClaudeExecutor {
     const { sandboxPath, prompt, timeout, onOutput } = this.config
 
     // Spawn Claude Code CLI in non-interactive mode
+    // Permissions are configured via .claude/settings.local.json in sandbox
     this.proc = Bun.spawn(
-      [
-        'claude',
-        '--print',
-        '--dangerously-skip-permissions',
-        '--max-turns',
-        '50',
-        '--output-format',
-        'text',
-        prompt,
-      ],
+      ['claude', '--print', '--max-turns', '50', '--output-format', 'text', prompt],
       {
         cwd: sandboxPath,
         env: {

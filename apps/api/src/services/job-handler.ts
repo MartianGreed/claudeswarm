@@ -285,6 +285,7 @@ export default (router: ConnectRouter) =>
         completionPromise: 'TASK COMPLETE',
         sandboxBasePath: job.project.sandboxBasePath,
         claudeMdTemplate: job.project.claudeMdTemplate,
+        claudePermissionsConfig: job.project.claudePermissionsConfig,
         sandboxPath: job.sandboxPath,
         branchName: job.branchName,
       })

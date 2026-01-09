@@ -34,6 +34,10 @@ export interface PRResult {
   number: number
 }
 
+export interface ClaudePermissionsConfig {
+  allow: string[]
+}
+
 export interface JobPayload {
   jobId: string
   projectId: string
@@ -49,6 +53,7 @@ export interface JobPayload {
   completionPromise: string | null
   sandboxBasePath: string
   claudeMdTemplate: string | null
+  claudePermissionsConfig: ClaudePermissionsConfig
   sandboxPath?: string | null
   branchName?: string | null
 }

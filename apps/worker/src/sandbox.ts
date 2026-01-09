@@ -41,6 +41,20 @@ export class SandboxManager {
         await Bun.write(join(sandboxPath, 'CLAUDE.md'), job.claudeMdTemplate)
       }
 
+      // Write Claude permissions settings
+      const claudeDir = join(sandboxPath, '.claude')
+      await mkdir(claudeDir, { recursive: true })
+      await Bun.write(
+        join(claudeDir, 'settings.local.json'),
+        JSON.stringify(
+          {
+            permissions: job.claudePermissionsConfig,
+          },
+          null,
+          2,
+        ),
+      )
+
       return { sandboxPath, branchName }
     } catch (error) {
       throw new SandboxError(`Failed to create sandbox: ${error}`)
