@@ -273,6 +273,8 @@ export const jobs = pgTable('jobs', {
 
   pendingPermissionRequest: text('pending_permission_request'),
 
+  finalOutput: text('final_output'),
+
   startedAt: timestamp('started_at'),
   completedAt: timestamp('completed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

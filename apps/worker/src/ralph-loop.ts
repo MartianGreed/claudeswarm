@@ -10,7 +10,7 @@ import {
   parsePromiseTags,
 } from '@claudeswarm/shared'
 import { createTicketProvider } from '@claudeswarm/ticket-providers'
-import { eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { env } from './env'
 import { ClaudeExecutor } from './executor'
 import { SandboxManager } from './sandbox'
@@ -70,6 +70,14 @@ export class RalphLoop {
     } catch (error) {
       console.error(`Failed to add ticket comment: ${error}`)
     }
+  }
+
+  private async getLastIterationOutput(): Promise<string | null> {
+    const lastLog = await db.query.jobLogs.findFirst({
+      where: and(eq(jobLogs.jobId, this.job.jobId), eq(jobLogs.eventType, 'iteration_end')),
+      orderBy: [desc(jobLogs.createdAt)],
+    })
+    return lastLog?.claudeOutput || null
   }
 
   async run(): Promise<void> {
@@ -262,10 +270,13 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
   }
 
   private async handleCompletion(): Promise<void> {
+    const finalOutput = await this.getLastIterationOutput()
+
     await db
       .update(jobs)
       .set({
         status: 'completed',
+        finalOutput,
         completedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -277,8 +288,8 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
       eventType: 'completed',
     })
 
-    // Add completion comment to ticket
-    await this.addTicketComment('ClaudeSwarm has completed work on this issue.')
+    await this.updateTicketStatus('Done')
+    await this.addTicketComment(finalOutput || 'ClaudeSwarm has completed work on this issue.')
 
     // Cleanup sandbox
     if (this.sandboxPath) {
@@ -328,6 +339,7 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
 
   private async handlePRCreated(prUrl: string): Promise<void> {
     const prNumber = extractPRNumber(prUrl)
+    const finalOutput = await this.getLastIterationOutput()
 
     await db
       .update(jobs)
@@ -335,6 +347,7 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
         status: 'pr_created',
         prUrl,
         prNumber,
+        finalOutput,
         updatedAt: new Date(),
       })
       .where(eq(jobs.id, this.job.jobId))
@@ -346,10 +359,12 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
       eventData: { prUrl, prNumber },
     })
 
-    // Add comment to ticket with PR link
-    await this.addTicketComment(
-      `ClaudeSwarm has created a PR for this issue:\n\n${prUrl}\n\nPlease review and merge when ready.`,
-    )
+    await this.updateTicketStatus('Done')
+
+    const comment = finalOutput
+      ? `${finalOutput}\n\nPR: ${prUrl}`
+      : `ClaudeSwarm has created a PR for this issue:\n\n${prUrl}\n\nPlease review and merge when ready.`
+    await this.addTicketComment(comment)
   }
 
   private async handleMaxIterationsReached(): Promise<void> {
