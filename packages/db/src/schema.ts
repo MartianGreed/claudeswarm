@@ -110,7 +110,7 @@ export const projects = pgTable(
       .$type<{ allow: string[] }>()
       .notNull()
       .default({
-        allow: ['Bash(*)', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
+        allow: ['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
       }),
 
     isActive: boolean('is_active').notNull().default(true),
