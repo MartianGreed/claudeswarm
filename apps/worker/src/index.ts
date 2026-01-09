@@ -19,6 +19,11 @@ async function main() {
 
   await queue.start()
 
+  // pg-boss v10 requires explicit queue creation before work
+  await queue.createQueue(QUEUE_NAMES.JOB_PROCESS)
+  await queue.createQueue(QUEUE_NAMES.JOB_RESUME)
+  await queue.createQueue(QUEUE_NAMES.JOB_CANCEL)
+
   // Subscribe to job processing
   await queue.subscribe(QUEUE_NAMES.JOB_PROCESS, async (job) => {
     const payload = job.data as JobProcessPayload

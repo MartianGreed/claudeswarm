@@ -10,6 +10,12 @@ let started = false
 export async function startQueue(): Promise<void> {
   if (!started) {
     await queue.start()
+
+    // pg-boss v10 requires explicit queue creation before send/work
+    await queue.createQueue(QUEUE_NAMES.JOB_PROCESS)
+    await queue.createQueue(QUEUE_NAMES.JOB_RESUME)
+    await queue.createQueue(QUEUE_NAMES.JOB_CANCEL)
+
     started = true
     console.log('Queue started')
   }

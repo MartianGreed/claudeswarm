@@ -16,6 +16,10 @@ export class Queue {
     await this.boss.stop()
   }
 
+  async createQueue(name: QueueName): Promise<void> {
+    await this.boss.createQueue(name)
+  }
+
   async send<T extends QueueName>(name: T, data: QueuePayloadMap[T]): Promise<string | null> {
     return this.boss.send(name, data)
   }
