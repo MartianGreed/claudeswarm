@@ -4,6 +4,7 @@ export const QUEUE_NAMES = {
   JOB_PROCESS: 'job:process',
   JOB_RESUME: 'job:resume',
   JOB_CANCEL: 'job:cancel',
+  JOB_PERMISSION_ANSWER: 'job:permission',
   TICKET_SYNC: 'ticket:sync',
 } as const
 
@@ -20,6 +21,12 @@ export interface JobCancelPayload {
   jobId: string
 }
 
+export interface JobPermissionAnswerPayload {
+  jobId: string
+  approved: boolean
+  command: string
+}
+
 export interface TicketSyncPayload {
   projectId: string
 }
@@ -28,5 +35,6 @@ export type QueuePayloadMap = {
   [QUEUE_NAMES.JOB_PROCESS]: JobProcessPayload
   [QUEUE_NAMES.JOB_RESUME]: JobResumePayload
   [QUEUE_NAMES.JOB_CANCEL]: JobCancelPayload
+  [QUEUE_NAMES.JOB_PERMISSION_ANSWER]: JobPermissionAnswerPayload
   [QUEUE_NAMES.TICKET_SYNC]: TicketSyncPayload
 }

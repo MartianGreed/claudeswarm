@@ -33,6 +33,18 @@ export function parseClarificationTags(output: string): string | null {
   return match ? match[1].trim() : null
 }
 
+export function parsePermissionRequest(output: string): string | null {
+  const lines = output.split('\n')
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].includes('Error: This command requires approval')) {
+      const prevLine = lines[i - 1]
+      const match = prevLine.match(/(?:⏺\s*)?Bash\((.+)\)\s*$/)
+      if (match) return match[1]
+    }
+  }
+  return null
+}
+
 export function extractPRUrl(output: string): string | null {
   const githubMatch = output.match(/https:\/\/github\.com\/[^\/]+\/[^\/]+\/pull\/\d+/)
   if (githubMatch) return githubMatch[0]

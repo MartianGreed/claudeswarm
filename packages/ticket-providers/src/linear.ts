@@ -21,6 +21,18 @@ function mapPriority(linearPriority: number): TicketPriority | null {
 async function mapToTicketData(issue: Issue): Promise<TicketData> {
   const labels = await issue.labels()
   const state = await issue.state
+  const commentsData = await issue.comments()
+
+  const comments = await Promise.all(
+    commentsData.nodes.map(async (c) => {
+      const user = await c.user
+      return {
+        body: c.body,
+        createdAt: c.createdAt.toISOString(),
+        author: user?.name || null,
+      }
+    }),
+  )
 
   return {
     externalId: issue.id,
@@ -31,6 +43,7 @@ async function mapToTicketData(issue: Issue): Promise<TicketData> {
     labels: labels.nodes.map((l) => l.name),
     dependsOn: [],
     status: state?.name || 'Unknown',
+    comments,
     rawData: issue,
   }
 }

@@ -15,6 +15,7 @@ export async function startQueue(): Promise<void> {
     await queue.createQueue(QUEUE_NAMES.JOB_PROCESS)
     await queue.createQueue(QUEUE_NAMES.JOB_RESUME)
     await queue.createQueue(QUEUE_NAMES.JOB_CANCEL)
+    await queue.createQueue(QUEUE_NAMES.JOB_PERMISSION_ANSWER)
 
     started = true
     console.log('Queue started')
@@ -61,6 +62,10 @@ export async function recoverOrphanedJobs(db: ReturnType<typeof createDbClient>)
       claudePermissionsConfig: job.project.claudePermissionsConfig,
       sandboxPath: job.sandboxPath,
       branchName: job.branchName,
+      ticketProvider: job.project.ticketProvider,
+      ticketProviderToken: job.project.ticketProviderToken,
+      ticketProviderConfig: job.project.ticketProviderConfig,
+      ticketComments: job.ticket.comments || [],
     })
     console.log(`  Re-queued job ${job.id}`)
   }

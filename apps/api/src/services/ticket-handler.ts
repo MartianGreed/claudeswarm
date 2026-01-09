@@ -75,6 +75,8 @@ export default (router: ConnectRouter) =>
               priority: ticketData.priority,
               labels: ticketData.labels,
               dependsOn: ticketData.dependsOn,
+              externalStatus: ticketData.status,
+              comments: ticketData.comments,
               lastSyncedAt: new Date(),
               updatedAt: new Date(),
             })
@@ -92,6 +94,8 @@ export default (router: ConnectRouter) =>
               priority: ticketData.priority,
               labels: ticketData.labels,
               dependsOn: ticketData.dependsOn,
+              externalStatus: ticketData.status,
+              comments: ticketData.comments,
               lastSyncedAt: new Date(),
             })
             .returning()
@@ -100,11 +104,27 @@ export default (router: ConnectRouter) =>
 
         syncedCount++
 
+        // Only create jobs for 'todo' status tickets (not backlog)
+        const isTodo =
+          ticketData.status.toLowerCase() === 'todo' ||
+          ticketData.status.toLowerCase() === 'unstarted'
+
+        if (!isTodo) {
+          // Backlog ticket - store it but don't create a job
+          continue
+        }
+
+        // Find the latest job for this ticket
         const existingJob = await db.query.jobs.findFirst({
           where: eq(jobs.ticketId, ticketId),
+          orderBy: [desc(jobs.createdAt)],
         })
 
-        if (!existingJob) {
+        // Create job if: no job exists OR job was completed/pr_created (ticket moved back to todo)
+        const shouldCreateJob =
+          !existingJob || existingJob.status === 'completed' || existingJob.status === 'pr_created'
+
+        if (shouldCreateJob) {
           const [newJob] = await db
             .insert(jobs)
             .values({
@@ -130,6 +150,10 @@ export default (router: ConnectRouter) =>
             sandboxBasePath: project.sandboxBasePath,
             claudeMdTemplate: project.claudeMdTemplate,
             claudePermissionsConfig: project.claudePermissionsConfig,
+            ticketProvider: project.ticketProvider,
+            ticketProviderToken: project.ticketProviderToken,
+            ticketProviderConfig: project.ticketProviderConfig,
+            ticketComments: ticketData.comments,
           })
 
           createdJobsCount++

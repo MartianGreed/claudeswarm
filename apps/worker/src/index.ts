@@ -1,4 +1,5 @@
 import {
+  type JobPermissionAnswerPayload,
   type JobProcessPayload,
   type JobResumePayload,
   QUEUE_NAMES,
@@ -23,6 +24,7 @@ async function main() {
   await queue.createQueue(QUEUE_NAMES.JOB_PROCESS)
   await queue.createQueue(QUEUE_NAMES.JOB_RESUME)
   await queue.createQueue(QUEUE_NAMES.JOB_CANCEL)
+  await queue.createQueue(QUEUE_NAMES.JOB_PERMISSION_ANSWER)
 
   // Subscribe to job processing
   await queue.subscribe(QUEUE_NAMES.JOB_PROCESS, async (job) => {
@@ -61,6 +63,19 @@ async function main() {
 
     // TODO: Implement cancellation
     // Would need to signal the running loop to stop
+  })
+
+  // Subscribe to permission answer
+  await queue.subscribe(QUEUE_NAMES.JOB_PERMISSION_ANSWER, async (job) => {
+    const payload = job.data as JobPermissionAnswerPayload
+    console.log(`Permission ${payload.approved ? 'approved' : 'denied'} for job ${payload.jobId}`)
+
+    const existingLoop = runningJobs.get(payload.jobId)
+    if (existingLoop) {
+      await existingLoop.resumeWithPermission(payload.approved, payload.command)
+    } else {
+      console.error(`Job ${payload.jobId} not found in running jobs`)
+    }
   })
 
   console.log('Worker ready and listening for jobs')

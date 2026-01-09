@@ -6,8 +6,10 @@ import {
   extractPRNumber,
   extractPRUrl,
   parseClarificationTags,
+  parsePermissionRequest,
   parsePromiseTags,
 } from '@claudeswarm/shared'
+import { createTicketProvider } from '@claudeswarm/ticket-providers'
 import { eq } from 'drizzle-orm'
 import { env } from './env'
 import { ClaudeExecutor } from './executor'
@@ -46,6 +48,30 @@ export class RalphLoop {
     }
   }
 
+  private async updateTicketStatus(status: string): Promise<void> {
+    try {
+      const provider = createTicketProvider(this.job.ticketProvider)
+      await provider.updateStatus(this.job.externalTicketId, status, {
+        token: this.job.ticketProviderToken,
+        ...this.job.ticketProviderConfig,
+      })
+    } catch (error) {
+      console.error(`Failed to update ticket status: ${error}`)
+    }
+  }
+
+  private async addTicketComment(comment: string): Promise<void> {
+    try {
+      const provider = createTicketProvider(this.job.ticketProvider)
+      await provider.addComment(this.job.externalTicketId, comment, {
+        token: this.job.ticketProviderToken,
+        ...this.job.ticketProviderConfig,
+      })
+    } catch (error) {
+      console.error(`Failed to add ticket comment: ${error}`)
+    }
+  }
+
   async run(): Promise<void> {
     // Check if sandbox already exists (from previous run)
     if (this.job.sandboxPath && (await this.sandboxExists(this.job.sandboxPath))) {
@@ -70,6 +96,9 @@ export class RalphLoop {
         updatedAt: new Date(),
       })
       .where(eq(jobs.id, this.job.jobId))
+
+    // Mark ticket as in progress in ticket provider
+    await this.updateTicketStatus('In Progress')
 
     try {
       await this.executeLoop()
@@ -139,6 +168,12 @@ export class RalphLoop {
         break
       }
 
+      // Check for permission request
+      if (signals.needsPermission && signals.permissionRequest) {
+        await this.handlePermissionRequest(signals.permissionRequest)
+        break
+      }
+
       // Check for PR creation signal
       if (signals.prCreated && signals.prUrl) {
         this.state.isComplete = true
@@ -157,6 +192,8 @@ export class RalphLoop {
       hasCompletionPromise: false,
       needsClarification: false,
       clarificationQuestion: null,
+      needsPermission: false,
+      permissionRequest: null,
       prCreated: false,
       prUrl: null,
     }
@@ -176,6 +213,13 @@ export class RalphLoop {
       signals.clarificationQuestion = clarificationContent
     }
 
+    // Check for permission request
+    const permissionRequest = parsePermissionRequest(output)
+    if (permissionRequest) {
+      signals.needsPermission = true
+      signals.permissionRequest = permissionRequest
+    }
+
     // Check for PR URL
     const prUrl = extractPRUrl(output)
     if (prUrl) {
@@ -187,11 +231,19 @@ export class RalphLoop {
   }
 
   private buildPrompt(): string {
+    let commentsSection = ''
+    if (this.job.ticketComments?.length) {
+      commentsSection = '\n\n## Comments from ticket\n'
+      for (const c of this.job.ticketComments) {
+        commentsSection += `\n**${c.author || 'Unknown'}** (${c.createdAt}):\n${c.body}\n`
+      }
+    }
+
     return `
 # Task: ${this.job.title}
 
 ${this.job.description || 'No description provided.'}
-
+${commentsSection}
 ## Instructions
 
 Work on this task iteratively. You have access to the full codebase.
@@ -225,6 +277,9 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
       eventType: 'completed',
     })
 
+    // Add completion comment to ticket
+    await this.addTicketComment('ClaudeSwarm has completed work on this issue.')
+
     // Cleanup sandbox
     if (this.sandboxPath) {
       await this.sandbox.cleanup(this.sandboxPath)
@@ -253,6 +308,24 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
     // await ticketProvider.addComment(this.job.externalTicketId, ...)
   }
 
+  private async handlePermissionRequest(command: string): Promise<void> {
+    await db
+      .update(jobs)
+      .set({
+        status: 'needs_permission',
+        pendingPermissionRequest: command,
+        updatedAt: new Date(),
+      })
+      .where(eq(jobs.id, this.job.jobId))
+
+    await db.insert(jobLogs).values({
+      jobId: this.job.jobId,
+      iteration: this.state.iteration,
+      eventType: 'permission_requested',
+      eventData: { command },
+    })
+  }
+
   private async handlePRCreated(prUrl: string): Promise<void> {
     const prNumber = extractPRNumber(prUrl)
 
@@ -272,6 +345,11 @@ Current iteration: ${this.state.iteration}/${this.state.maxIterations}
       eventType: 'pr_created',
       eventData: { prUrl, prNumber },
     })
+
+    // Add comment to ticket with PR link
+    await this.addTicketComment(
+      `ClaudeSwarm has created a PR for this issue:\n\n${prUrl}\n\nPlease review and merge when ready.`,
+    )
   }
 
   private async handleMaxIterationsReached(): Promise<void> {
@@ -338,6 +416,47 @@ ${this.buildPrompt()}
         updatedAt: new Date(),
       })
       .where(eq(jobs.id, this.job.jobId))
+
+    await this.executeLoop()
+  }
+
+  async resumeWithPermission(approved: boolean, command: string): Promise<void> {
+    if (approved) {
+      // Update prompt to continue with approved command
+      this.state.prompt = `
+The following command was approved: ${command}
+
+Please proceed with the task. The command has been approved and you can execute it.
+
+${this.buildPrompt()}
+      `.trim()
+    } else {
+      // Command denied - ask Claude to find alternative
+      this.state.prompt = `
+The following command was denied: ${command}
+
+Please find an alternative approach that doesn't require this command, or ask for clarification if you need more information.
+
+${this.buildPrompt()}
+      `.trim()
+    }
+
+    // Update job
+    await db
+      .update(jobs)
+      .set({
+        pendingPermissionRequest: null,
+        status: 'running',
+        updatedAt: new Date(),
+      })
+      .where(eq(jobs.id, this.job.jobId))
+
+    await db.insert(jobLogs).values({
+      jobId: this.job.jobId,
+      iteration: this.state.iteration,
+      eventType: approved ? 'permission_approved' : 'permission_denied',
+      eventData: { command },
+    })
 
     await this.executeLoop()
   }

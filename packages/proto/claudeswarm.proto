@@ -122,6 +122,7 @@ service JobService {
   rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
   rpc RetryJob(RetryJobRequest) returns (RetryJobResponse);
   rpc AnswerClarification(AnswerClarificationRequest) returns (AnswerClarificationResponse);
+  rpc AnswerPermission(AnswerPermissionRequest) returns (AnswerPermissionResponse);
   rpc GetJobLogs(GetJobLogsRequest) returns (GetJobLogsResponse);
   rpc StreamJobUpdates(StreamJobUpdatesRequest) returns (stream StreamJobUpdatesResponse);
 }
@@ -169,6 +170,15 @@ message AnswerClarificationRequest {
 }
 
 message AnswerClarificationResponse {
+  bool success = 1;
+}
+
+message AnswerPermissionRequest {
+  string job_id = 1;
+  bool approved = 2;
+}
+
+message AnswerPermissionResponse {
   bool success = 1;
 }
 
@@ -240,10 +250,11 @@ enum JobStatus {
   JOB_STATUS_WAITING_DEPENDENCY = 2;
   JOB_STATUS_RUNNING = 3;
   JOB_STATUS_NEEDS_CLARIFICATION = 4;
-  JOB_STATUS_PR_CREATED = 5;
-  JOB_STATUS_COMPLETED = 6;
-  JOB_STATUS_FAILED = 7;
-  JOB_STATUS_CANCELLED = 8;
+  JOB_STATUS_NEEDS_PERMISSION = 5;
+  JOB_STATUS_PR_CREATED = 6;
+  JOB_STATUS_COMPLETED = 7;
+  JOB_STATUS_FAILED = 8;
+  JOB_STATUS_CANCELLED = 9;
 }
 
 enum TicketProvider {
@@ -341,6 +352,7 @@ message Job {
   google.protobuf.Timestamp updated_at = 19;
   optional Ticket ticket = 20;
   optional string error_stack = 21;
+  optional string pending_permission_request = 22;
 }
 
 message JobLog {

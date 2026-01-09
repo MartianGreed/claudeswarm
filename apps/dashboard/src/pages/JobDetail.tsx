@@ -27,6 +27,8 @@ function getStatusBadge(status: JobStatus) {
       return { text: 'Cancelled', className: 'bg-gray-100 text-gray-600' }
     case JobStatus.WAITING_DEPENDENCY:
       return { text: 'Waiting', className: 'bg-orange-100 text-orange-800' }
+    case JobStatus.NEEDS_PERMISSION:
+      return { text: 'Needs Permission', className: 'bg-orange-100 text-orange-800' }
     default:
       return { text: 'Unknown', className: 'bg-gray-100 text-gray-800' }
   }
@@ -87,6 +89,17 @@ export function JobDetailPage({ jobId, onBack }: JobDetailPageProps) {
     },
   })
 
+  const permissionMutation = useMutation({
+    mutationFn: async (approved: boolean) => {
+      const client = getJobClient()
+      return client.answerPermission({ jobId, approved })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job', jobId] })
+      queryClient.invalidateQueries({ queryKey: ['jobs'] })
+    },
+  })
+
   const toggleLog = (logId: string) => {
     setExpandedLogs((prev) => {
       const next = new Set(prev)
@@ -136,6 +149,7 @@ export function JobDetailPage({ jobId, onBack }: JobDetailPageProps) {
   const canCancel = job.status === JobStatus.RUNNING || job.status === JobStatus.PENDING
   const canRetry = job.status === JobStatus.FAILED || job.status === JobStatus.CANCELLED
   const needsClarification = job.status === JobStatus.NEEDS_CLARIFICATION
+  const needsPermission = job.status === JobStatus.NEEDS_PERMISSION
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -259,6 +273,36 @@ export function JobDetailPage({ jobId, onBack }: JobDetailPageProps) {
             >
               {answerMutation.isPending ? 'Sending...' : 'Send Answer'}
             </button>
+          </div>
+        )}
+
+        {needsPermission && (
+          <div className="bg-orange-50 rounded-lg border border-orange-200 p-6">
+            <h3 className="text-lg font-semibold text-orange-800 mb-2">Permission Required</h3>
+            <p className="text-orange-700 mb-2">
+              Claude needs permission to run the following command:
+            </p>
+            <pre className="bg-orange-100 text-orange-900 px-3 py-2 rounded-md font-mono text-sm mb-4 overflow-x-auto">
+              {job.pendingPermissionRequest}
+            </pre>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => permissionMutation.mutate(true)}
+                disabled={permissionMutation.isPending}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {permissionMutation.isPending ? 'Processing...' : 'Approve'}
+              </button>
+              <button
+                type="button"
+                onClick={() => permissionMutation.mutate(false)}
+                disabled={permissionMutation.isPending}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {permissionMutation.isPending ? 'Processing...' : 'Deny'}
+              </button>
+            </div>
           </div>
         )}
 

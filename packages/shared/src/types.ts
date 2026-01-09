@@ -1,5 +1,11 @@
 export type TicketPriority = 'urgent' | 'high' | 'medium' | 'low'
 
+export interface TicketComment {
+  body: string
+  createdAt: string
+  author: string | null
+}
+
 export interface TicketData {
   externalId: string
   externalUrl: string
@@ -9,6 +15,7 @@ export interface TicketData {
   labels: string[]
   dependsOn: string[]
   status: string
+  comments: TicketComment[]
   rawData: unknown
 }
 
@@ -56,6 +63,10 @@ export interface JobPayload {
   claudePermissionsConfig: ClaudePermissionsConfig
   sandboxPath?: string | null
   branchName?: string | null
+  ticketProvider: 'linear' | 'notion' | 'jira'
+  ticketProviderToken: string
+  ticketProviderConfig: Record<string, unknown>
+  ticketComments?: TicketComment[]
 }
 
 export interface ClaudeLoopState {
@@ -73,6 +84,8 @@ export interface ClaudeSignals {
   hasCompletionPromise: boolean
   needsClarification: boolean
   clarificationQuestion: string | null
+  needsPermission: boolean
+  permissionRequest: string | null
   prCreated: boolean
   prUrl: string | null
 }

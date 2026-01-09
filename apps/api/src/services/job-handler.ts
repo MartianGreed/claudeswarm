@@ -3,6 +3,7 @@ import { timestampFromDate } from '@bufbuild/protobuf/wkt'
 import { createDbClient, jobLogs, jobs } from '@claudeswarm/db'
 import {
   AnswerClarificationResponseSchema,
+  AnswerPermissionResponseSchema,
   CancelJobResponseSchema,
   GetJobLogsResponseSchema,
   GetJobResponseSchema,
@@ -41,6 +42,8 @@ function mapStatusToProto(status: string): JobStatus {
       return JobStatus.RUNNING
     case 'needs_clarification':
       return JobStatus.NEEDS_CLARIFICATION
+    case 'needs_permission':
+      return JobStatus.NEEDS_PERMISSION
     case 'pr_created':
       return JobStatus.PR_CREATED
     case 'completed':
@@ -64,6 +67,8 @@ function mapStatusFromProto(status: JobStatus): string | undefined {
       return 'running'
     case JobStatus.NEEDS_CLARIFICATION:
       return 'needs_clarification'
+    case JobStatus.NEEDS_PERMISSION:
+      return 'needs_permission'
     case JobStatus.PR_CREATED:
       return 'pr_created'
     case JobStatus.COMPLETED:
@@ -288,6 +293,10 @@ export default (router: ConnectRouter) =>
         claudePermissionsConfig: job.project.claudePermissionsConfig,
         sandboxPath: job.sandboxPath,
         branchName: job.branchName,
+        ticketProvider: job.project.ticketProvider,
+        ticketProviderToken: job.project.ticketProviderToken,
+        ticketProviderConfig: job.project.ticketProviderConfig,
+        ticketComments: job.ticket.comments || [],
       })
 
       return create(RetryJobResponseSchema, { success: true })
@@ -323,6 +332,41 @@ export default (router: ConnectRouter) =>
       await queue.send(QUEUE_NAMES.JOB_RESUME, { jobId: req.jobId, answer: req.answer })
 
       return create(AnswerClarificationResponseSchema, { success: true })
+    },
+
+    async answerPermission(req, ctx) {
+      const user = getUser(ctx)
+      if (!user.organizationId) {
+        throw new Error('Not authorized')
+      }
+
+      const job = await db.query.jobs.findFirst({
+        where: eq(jobs.id, req.jobId),
+      })
+
+      if (!job) {
+        throw new Error('Job not found')
+      }
+
+      if (job.status !== 'needs_permission') {
+        throw new Error('Job is not awaiting permission')
+      }
+
+      await db
+        .update(jobs)
+        .set({
+          status: 'running',
+          updatedAt: new Date(),
+        })
+        .where(eq(jobs.id, req.jobId))
+
+      await queue.send(QUEUE_NAMES.JOB_PERMISSION_ANSWER, {
+        jobId: req.jobId,
+        approved: req.approved,
+        command: job.pendingPermissionRequest || '',
+      })
+
+      return create(AnswerPermissionResponseSchema, { success: true })
     },
 
     async getJobLogs(req, ctx) {
