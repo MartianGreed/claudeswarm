@@ -95,3 +95,7 @@ bun run dev
 - **API**: Hono + Connect-ES (gRPC)
 - **Frontend**: React + TanStack Query + Tailwind
 - **VCS during work**: jj (Jujutsu)
+
+## Workflow
+
+- Commit work using jj-vcs after completing each task
