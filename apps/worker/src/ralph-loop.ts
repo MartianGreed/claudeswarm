@@ -147,20 +147,39 @@ export class RalphLoop {
         })
         .returning({ id: jobLogs.id })
 
-      // Set up output buffering for periodic flushes
+      // Set up output streaming with write queue
       let accumulatedOutput = ''
-      let lastFlush = Date.now()
-      const FLUSH_INTERVAL = 2000 // 2 seconds
+      let writeInProgress = false
+      let pendingWrite = false
 
       const flushOutput = async () => {
-        if (accumulatedOutput.length > 0) {
+        if (writeInProgress) {
+          pendingWrite = true
+          return
+        }
+        if (accumulatedOutput.length === 0) return
+
+        writeInProgress = true
+        const outputToWrite = accumulatedOutput
+
+        try {
           await db
             .update(jobLogs)
-            .set({ claudeOutput: accumulatedOutput.slice(0, 50000) })
+            .set({ claudeOutput: outputToWrite.slice(0, 50000) })
             .where(eq(jobLogs.id, outputLogEntry.id))
-          lastFlush = Date.now()
+        } finally {
+          writeInProgress = false
+          if (pendingWrite) {
+            pendingWrite = false
+            flushOutput()
+          }
         }
       }
+
+      // Set up periodic flush timer
+      const flushTimer = setInterval(() => {
+        flushOutput()
+      }, 2000)
 
       // Execute Claude
       const executor = new ClaudeExecutor({
@@ -169,17 +188,14 @@ export class RalphLoop {
         timeout: 10 * 60 * 1000, // 10 minutes per iteration
         onOutput: (chunk) => {
           accumulatedOutput += chunk
-          const now = Date.now()
-          if (now - lastFlush > FLUSH_INTERVAL || accumulatedOutput.length > 10000) {
-            flushOutput()
-          }
         },
       })
 
       const { output, exitCode } = await executor.execute()
       this.state.lastOutput = output
 
-      // Final flush of any remaining output
+      // Stop timer and final flush
+      clearInterval(flushTimer)
       accumulatedOutput = output
       await flushOutput()
 
