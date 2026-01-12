@@ -44,3 +44,5 @@ sandboxes/
 
 # Turbo
 .turbo/
+
+.claude-modified-files
