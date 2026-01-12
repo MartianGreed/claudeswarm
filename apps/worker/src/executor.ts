@@ -148,14 +148,15 @@ export class ClaudeExecutor {
       case 'assistant':
         // Assistant message with content blocks
         if (event.message?.content) {
-          return event.message.content
+          const text = event.message.content
             .filter((block) => block.type === 'text' && block.text)
             .map((block) => block.text)
             .join('')
+          return text ? '\n' + text : null
         }
         // Direct content field
         if (event.content) {
-          return event.content
+          return '\n' + event.content
         }
         break
 
@@ -174,23 +175,23 @@ export class ClaudeExecutor {
         break
 
       case 'tool_use':
-        // Show tool usage for visibility
+        // Show tool usage with clear separator
         if (event.tool_name) {
-          return `\n[Tool: ${event.tool_name}]\n`
+          return `\n\n━━━ Tool: ${event.tool_name} ━━━\n`
         }
         break
 
       case 'tool_result':
       case 'result':
-        // Tool execution result
+        // Tool execution result with separator
         if (event.result) {
           const resultStr =
             typeof event.result === 'string' ? event.result : JSON.stringify(event.result)
           // Truncate very long results
           if (resultStr.length > 2000) {
-            return resultStr.slice(0, 2000) + '... [truncated]\n'
+            return resultStr.slice(0, 2000) + '... [truncated]\n━━━━━━━━━━━━━━━━━━\n\n'
           }
-          return resultStr + '\n'
+          return resultStr + '\n━━━━━━━━━━━━━━━━━━\n\n'
         }
         break
     }
