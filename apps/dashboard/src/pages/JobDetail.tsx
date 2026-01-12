@@ -325,6 +325,24 @@ export function JobDetailPage({ jobId, onBack }: JobDetailPageProps) {
           </div>
         )}
 
+        {job.status === JobStatus.RUNNING && (
+          <div className="bg-gray-900 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-100 mb-4">Live Output</h3>
+            {(() => {
+              const latestOutput = logsData?.logs?.find(
+                (log: JobLog) => log.eventType === 'iteration_output'
+              )
+              return latestOutput?.claudeOutput ? (
+                <pre className="text-sm font-mono text-gray-300 whitespace-pre-wrap overflow-x-auto max-h-[500px] overflow-y-auto">
+                  {latestOutput.claudeOutput}
+                </pre>
+              ) : (
+                <p className="text-gray-500 text-sm">Waiting for output...</p>
+              )
+            })()}
+          </div>
+        )}
+
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Logs</h3>
           {(!logsData?.logs || logsData.logs.length === 0) && (
