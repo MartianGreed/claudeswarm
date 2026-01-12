@@ -116,9 +116,8 @@ export default (router: ConnectRouter) =>
           orderBy: [desc(jobs.createdAt)],
         })
 
-        // Create job if: no job exists OR job was completed/pr_created (ticket moved back to todo)
-        const shouldCreateJob =
-          !existingJob || existingJob.status === 'completed' || existingJob.status === 'pr_created'
+        // Create job if: no job exists OR job was completed (ticket moved back to todo)
+        const shouldCreateJob = !existingJob || existingJob.status === 'completed'
 
         if (shouldCreateJob) {
           try {
