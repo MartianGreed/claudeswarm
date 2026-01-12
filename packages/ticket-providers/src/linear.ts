@@ -126,10 +126,37 @@ export class LinearProvider implements TicketProvider {
       }
 
       const states = await team.states()
-      const targetState = states.nodes.find((s) => s.name.toLowerCase() === status.toLowerCase())
+
+      // First try to find by exact name match
+      let targetState = states.nodes.find((s) => s.name.toLowerCase() === status.toLowerCase())
+
+      // If not found by name, try to find by state type
+      // Map common status names to Linear state types
+      if (!targetState) {
+        const statusToTypeMap: Record<string, string> = {
+          done: 'completed',
+          completed: 'completed',
+          closed: 'completed',
+          'in progress': 'started',
+          started: 'started',
+          todo: 'unstarted',
+          backlog: 'backlog',
+          cancelled: 'canceled',
+          canceled: 'canceled',
+        }
+
+        const targetType = statusToTypeMap[status.toLowerCase()]
+        if (targetType) {
+          targetState = states.nodes.find((s) => s.type === targetType)
+        }
+      }
 
       if (!targetState) {
-        throw new TicketProviderError(`Status "${status}" not found in team workflow`, this.name)
+        const availableStates = states.nodes.map((s) => `${s.name} (${s.type})`).join(', ')
+        throw new TicketProviderError(
+          `Status "${status}" not found in team workflow. Available states: ${availableStates}`,
+          this.name,
+        )
       }
 
       await issue.update({ stateId: targetState.id })
