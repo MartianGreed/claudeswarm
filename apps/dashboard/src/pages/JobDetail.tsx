@@ -46,14 +46,30 @@ export function JobDetailPage({ jobId, onBack }: JobDetailPageProps) {
       const client = getJobClient()
       return client.getJob({ jobId })
     },
+    refetchInterval: (query) => {
+      const status = query.state.data?.job?.status
+      const isActive =
+        status === JobStatus.RUNNING ||
+        status === JobStatus.PENDING ||
+        status === JobStatus.NEEDS_CLARIFICATION ||
+        status === JobStatus.NEEDS_PERMISSION
+      return isActive ? 3000 : false
+    },
   })
+
+  const isActiveJob =
+    data?.job?.status === JobStatus.RUNNING ||
+    data?.job?.status === JobStatus.PENDING ||
+    data?.job?.status === JobStatus.NEEDS_CLARIFICATION ||
+    data?.job?.status === JobStatus.NEEDS_PERMISSION
 
   const { data: logsData } = useQuery({
     queryKey: ['jobLogs', jobId],
     queryFn: async () => {
       const client = getJobClient()
-      return client.getJobLogs({ jobId, limit: 50, offset: 0 })
+      return client.getJobLogs({ jobId, limit: 100, offset: 0 })
     },
+    refetchInterval: isActiveJob ? 2000 : false,
   })
 
   const cancelMutation = useMutation({
