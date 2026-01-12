@@ -10,7 +10,7 @@ import {
   parsePromiseTags,
 } from '@claudeswarm/shared'
 import { createTicketProvider } from '@claudeswarm/ticket-providers'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import { env } from './env'
 import { ClaudeExecutor } from './executor'
 import { SandboxManager } from './sandbox'
@@ -149,6 +149,7 @@ export class RalphLoop {
 
       // Set up output streaming with write queue
       let accumulatedOutput = ''
+      let lastFlushedLength = 0
       let writeInProgress = false
       let pendingWrite = false
 
@@ -157,16 +158,29 @@ export class RalphLoop {
           pendingWrite = true
           return
         }
-        if (accumulatedOutput.length === 0) return
+
+        const newContent = accumulatedOutput.slice(lastFlushedLength)
+        if (newContent.length === 0) return
 
         writeInProgress = true
-        const outputToWrite = accumulatedOutput
+        // Respect 50KB limit
+        const maxAppend = Math.max(0, 50000 - lastFlushedLength)
+        const contentToAppend = newContent.slice(0, maxAppend)
+
+        if (contentToAppend.length === 0) {
+          writeInProgress = false
+          return
+        }
 
         try {
           await db
             .update(jobLogs)
-            .set({ claudeOutput: outputToWrite.slice(0, 50000) })
+            .set({
+              claudeOutput: sql`COALESCE(${jobLogs.claudeOutput}, '') || ${contentToAppend}`,
+            })
             .where(eq(jobLogs.id, outputLogEntry.id))
+
+          lastFlushedLength += contentToAppend.length
         } finally {
           writeInProgress = false
           if (pendingWrite) {
@@ -196,7 +210,6 @@ export class RalphLoop {
 
       // Stop timer and final flush
       clearInterval(flushTimer)
-      accumulatedOutput = output
       await flushOutput()
 
       // Parse output for signals
