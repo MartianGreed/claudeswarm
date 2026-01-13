@@ -108,8 +108,8 @@ export class ClaudeExecutor {
             }
           } catch {
             // Not JSON, treat as raw text (fallback for older CLI versions)
-            output += line + '\n'
-            onOutput?.(line + '\n')
+            output += `${line}\n`
+            onOutput?.(`${line}\n`)
           }
         }
       }
@@ -152,11 +152,11 @@ export class ClaudeExecutor {
             .filter((block) => block.type === 'text' && block.text)
             .map((block) => block.text)
             .join('')
-          return text ? '\n' + text : null
+          return text ? `\n${text}` : null
         }
         // Direct content field
         if (event.content) {
-          return '\n' + event.content
+          return `\n${event.content}`
         }
         break
 
@@ -189,9 +189,9 @@ export class ClaudeExecutor {
             typeof event.result === 'string' ? event.result : JSON.stringify(event.result)
           // Truncate very long results
           if (resultStr.length > 2000) {
-            return resultStr.slice(0, 2000) + '... [truncated]\n━━━━━━━━━━━━━━━━━━\n\n'
+            return `${resultStr.slice(0, 2000)}... [truncated]\n━━━━━━━━━━━━━━━━━━\n\n`
           }
-          return resultStr + '\n━━━━━━━━━━━━━━━━━━\n\n'
+          return `${resultStr}\n━━━━━━━━━━━━━━━━━━\n\n`
         }
         break
     }

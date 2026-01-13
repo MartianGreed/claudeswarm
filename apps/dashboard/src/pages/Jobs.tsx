@@ -112,6 +112,8 @@ export function JobsPage({ projectId, projectName, onBack, onSelectJob }: JobsPa
                       <tr
                         key={job.id}
                         onClick={() => onSelectJob(job.id)}
+                        onKeyDown={(e) => e.key === 'Enter' && onSelectJob(job.id)}
+                        tabIndex={0}
                         className="hover:bg-gray-50 cursor-pointer"
                       >
                         <td className="px-6 py-4">

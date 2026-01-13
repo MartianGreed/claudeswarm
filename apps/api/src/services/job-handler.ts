@@ -406,6 +406,7 @@ export default (router: ConnectRouter) =>
       })
     },
 
+    // biome-ignore lint/correctness/useYield: Generator required for server streaming RPC, throws before yielding
     async *streamJobUpdates(_req, _ctx) {
       throw new Error('StreamJobUpdates not yet implemented')
     },

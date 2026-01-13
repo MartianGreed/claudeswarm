@@ -330,7 +330,7 @@ export function JobDetailPage({ jobId, onBack }: JobDetailPageProps) {
             <h3 className="text-lg font-semibold text-gray-100 mb-4">Live Output</h3>
             {(() => {
               const latestOutput = logsData?.logs?.find(
-                (log: JobLog) => log.eventType === 'iteration_output'
+                (log: JobLog) => log.eventType === 'iteration_output',
               )
               return latestOutput?.claudeOutput ? (
                 <pre className="text-sm font-mono text-gray-300 whitespace-pre-wrap overflow-x-auto max-h-[500px] overflow-y-auto">
