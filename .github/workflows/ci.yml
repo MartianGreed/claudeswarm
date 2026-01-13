@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Generate proto types
+        run: bun run proto:generate
+
       - name: Type check
         run: bun run type:check
 
